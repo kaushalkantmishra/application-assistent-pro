@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useAuth } from "@/components/auth-provider"
+import { useSession, signOut } from "next-auth/react"
+import { useRole } from "@/hooks/use-role"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -17,6 +18,7 @@ import {
   BookOpen,
   Users,
   UserCheck,
+  LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -47,9 +49,10 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed }: SidebarProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { user } = useAuth()
+  const { data: session } = useSession()
+  const role = useRole()
 
-  const navigation = user?.role === "interviewer" ? interviewerNavigation : jobSeekerNavigation
+  const navigation = role === "interviewer" ? interviewerNavigation : jobSeekerNavigation
 
   return (
     <>
@@ -112,7 +115,21 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
           </nav>
 
           {/* Footer */}
-          <div className="px-4 py-4 border-t border-sidebar-border">
+          <div className="px-4 py-4 border-t border-sidebar-border space-y-2">
+            {session && (
+              <Button
+                variant="ghost"
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className={cn(
+                  "w-full justify-start text-muted-foreground hover:text-foreground",
+                  isCollapsed && "justify-center px-2"
+                )}
+                title={isCollapsed ? "Logout" : undefined}
+              >
+                <LogOut className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+                {!isCollapsed && "Logout"}
+              </Button>
+            )}
             {!isCollapsed && <p className="text-xs text-muted-foreground text-center">Built with v0 by Vercel</p>}
           </div>
         </div>

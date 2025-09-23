@@ -130,7 +130,6 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                 {!isCollapsed && "Logout"}
               </Button>
             )}
-            {!isCollapsed && <p className="text-xs text-muted-foreground text-center">Built with v0 by Vercel</p>}
           </div>
         </div>
       </div>

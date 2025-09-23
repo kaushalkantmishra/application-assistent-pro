@@ -18,11 +18,11 @@ export const authOptions = {
       return token
     },
     async session({ session, token }: any) {
-      if (token) {
-        session.user.role = token.role
-        session.user.image = token.picture
-        session.user.email = token.email
-        session.user.name = token.name
+      session.user = {
+        name: token.name,
+        email: token.email,
+        image: token.picture,
+        role: token.role
       }
       return session
     },

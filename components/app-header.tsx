@@ -32,6 +32,10 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
   const role = useRole()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
+  // Debug session data
+  console.log('Session data:', session)
+  console.log('User image URL:', session?.user?.image)
+
   const handleSignOut = () => {
     localStorage.removeItem('selectedRole')
     signOut({ callbackUrl: "/login" })
@@ -64,20 +68,36 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
 
           {/* User avatar - click to open profile */}
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              className="relative h-8 w-8 rounded-full"
+            <Button
+              variant="ghost"
+              className="relative h-10 w-10 rounded-full p-0"
               onClick={() => setIsProfileModalOpen(true)}
             >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
-                <AvatarFallback>{getUserInitials(session.user.name || "")}</AvatarFallback>
-              </Avatar>
+              {session.user?.image ? (
+                <img
+                  src={session.user.image}
+                  alt={session.user.name || "User"}
+                  className="h-10 w-10 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    console.log('Header image failed to load:', e)
+                    const target = e.currentTarget as HTMLImageElement
+                    target.style.display = 'none'
+                    target.insertAdjacentHTML('afterend', `<div class="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">${getUserInitials(session.user?.name || "")}</div>`)
+                  }}
+                  onLoad={() => console.log('Header image loaded successfully')}
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
+                  {getUserInitials(session.user?.name || "")}
+                </div>
+              )}
             </Button>
-            
+
             {/* Logout button */}
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleSignOut}
               title="Logout"
@@ -95,13 +115,27 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
             <DialogTitle>Profile Details</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-6 py-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-              <AvatarFallback className="text-2xl">
+            {session?.user?.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name || "User"}
+                className="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  console.log('Modal image failed to load:', e)
+                  const target = e.currentTarget as HTMLImageElement
+                  target.style.display = 'none'
+                  target.insertAdjacentHTML('afterend', `<div class="h-24 w-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium border-2 border-gray-200">${getUserInitials(session?.user?.name || "")}</div>`)
+                }}
+                onLoad={() => console.log('Modal image loaded successfully')}
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-medium border-2 border-gray-200">
                 {getUserInitials(session?.user?.name || "")}
-              </AvatarFallback>
-            </Avatar>
-            
+              </div>
+            )}
+
             <div className="space-y-4 w-full">
               <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                 <User className="h-5 w-5 text-muted-foreground" />
@@ -110,7 +144,7 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
                   <p className="text-sm text-muted-foreground">{session?.user?.name || 'Not provided'}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                 <Mail className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -118,7 +152,7 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
                   <p className="text-sm text-muted-foreground">{session?.user?.email || 'Not provided'}</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                 <Settings className="h-5 w-5 text-muted-foreground" />
                 <div>
@@ -128,7 +162,7 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
                   </Badge>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>

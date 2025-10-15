@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
+import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -75,10 +75,7 @@ export default function LatestJobsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="flex-1 lg:ml-64 p-4 lg:p-8">
+    <AppLayout>
         <PageHeader title="Latest Jobs" description="Discover new job opportunities from top companies">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
@@ -224,7 +221,6 @@ export default function LatestJobsPage() {
             </Card>
           )}
         </div>
-      </main>
-    </div>
+    </AppLayout>
   )
 }

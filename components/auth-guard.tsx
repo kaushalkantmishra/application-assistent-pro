@@ -1,24 +1,24 @@
 "use client"
 
 import type React from "react"
-import { useAuth } from "@/components/auth-provider"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth()
+  const { data: session, status } = useSession()
   const router = useRouter()
 
   useEffect(() => {
-    if (isLoading) return
+    if (status === "loading") return
 
-    if (!user) {
+    if (status === "unauthenticated") {
       router.push("/login")
       return
     }
-  }, [user, isLoading, router])
+  }, [status, router])
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
@@ -26,7 +26,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) {
+  if (status === "unauthenticated") {
     return null
   }
 

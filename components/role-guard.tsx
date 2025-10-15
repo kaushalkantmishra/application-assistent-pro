@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useAuth } from "@/components/auth-provider"
+import { useSession } from "next-auth/react"
+import { useRole } from "@/hooks/use-role"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Shield, ArrowLeft } from "lucide-react"
@@ -14,9 +15,10 @@ interface RoleGuardProps {
 }
 
 export function RoleGuard({ children, allowedRoles, fallbackMessage }: RoleGuardProps) {
-  const { user, isLoading } = useAuth()
+  const { data: session, status } = useSession()
+  const role = useRole()
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
@@ -24,7 +26,7 @@ export function RoleGuard({ children, allowedRoles, fallbackMessage }: RoleGuard
     )
   }
 
-  if (!user?.role || !allowedRoles.includes(user.role as any)) {
+  if (!role || !allowedRoles.includes(role)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -35,7 +37,7 @@ export function RoleGuard({ children, allowedRoles, fallbackMessage }: RoleGuard
             <CardTitle className="text-xl">Access Restricted</CardTitle>
             <CardDescription>
               {fallbackMessage ||
-                `This page is only accessible to ${allowedRoles.join(" and ")} accounts. Your current role is: ${user?.role || "unknown"}`}
+                `This page is only accessible to ${allowedRoles.join(" and ")} accounts. Your current role is: ${role || "unknown"}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center">

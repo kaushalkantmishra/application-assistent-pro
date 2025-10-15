@@ -44,9 +44,10 @@ const interviewerNavigation = [
 
 interface SidebarProps {
   isCollapsed: boolean
+  setIsCollapsed: (collapsed: boolean) => void
 }
 
-export function Sidebar({ isCollapsed }: SidebarProps) {
+export function Sidebar({ isCollapsed , setIsCollapsed}: SidebarProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { data: session } = useSession()
@@ -72,7 +73,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-40 bg-sidebar border-r border-sidebar-border transform transition-all duration-200 ease-in-out lg:translate-x-0",
-          isCollapsed ? "w-16" : "w-64",
+          isCollapsed ? "w-18" : "w-64",
           isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0",
         )}
       >
@@ -107,7 +108,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   )}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <item.icon className={cn(isCollapsed ? "h-6 w-6" : "h-4 w-4", !isCollapsed && "mr-3")} />
+                  <item.icon className={cn(isCollapsed ? "h-4" : "h-4 w-4", !isCollapsed && "mr-3")} />
                   {!isCollapsed && item.name}
                 </Link>
               )

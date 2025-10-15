@@ -121,7 +121,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   //     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   // )}
                   className={`flex justify-start items-center gap-2 p-2 ${
-                    isActive ? "bg-red-300 rounded-xl p-2" : ""
+                    isActive ? "bg-red-300  p-2" : ""
                   }`}
                   title={isCollapsed ? item.name : undefined}
                 >

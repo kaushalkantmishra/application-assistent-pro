@@ -107,7 +107,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                   )}
                   title={isCollapsed ? item.name : undefined}
                 >
-                  <item.icon className={cn("h-4 w-4", !isCollapsed && "mr-3")} />
+                  <item.icon className={cn(isCollapsed ? "h-6 w-6" : "h-4 w-4", !isCollapsed && "mr-3")} />
                   {!isCollapsed && item.name}
                 </Link>
               )
@@ -126,7 +126,7 @@ export function Sidebar({ isCollapsed }: SidebarProps) {
                 )}
                 title={isCollapsed ? "Logout" : undefined}
               >
-                <LogOut className={cn("h-4 w-4", !isCollapsed && "mr-2")} />
+                <LogOut className={cn(isCollapsed ? "h-6 w-6" : "h-4 w-4", !isCollapsed && "mr-2")} />
                 {!isCollapsed && "Logout"}
               </Button>
             )}

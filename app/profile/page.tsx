@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
+import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -77,10 +77,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="flex-1 lg:ml-64 p-4 lg:p-8">
+    <AppLayout>
         <PageHeader title="Profile" description="Manage your personal information and job preferences">
           <div className="flex gap-2">
             {isEditing ? (
@@ -358,7 +355,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+    </AppLayout>
   )
 }

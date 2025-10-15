@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Sidebar } from "@/components/sidebar"
+import { AppLayout } from "@/components/app-layout"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -151,10 +151,7 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-
-      <main className="flex-1 lg:ml-64 p-4 lg:p-8">
+    <AppLayout>
         <PageHeader title="Applications Tracker" description="Manage and track all your job applications">
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
@@ -418,7 +415,6 @@ export default function ApplicationsPage() {
             </Card>
           )}
         </div>
-      </main>
-    </div>
+    </AppLayout>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRole } from "@/hooks/use-role"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { LogOut, User, Settings, ChevronLeft, ChevronRight, Mail, Calendar } from "lucide-react"
 import LogoutModal from "./modals/logout-modal"
+import { AnalogClock } from "./analog-clock"
 
 interface AppHeaderProps {
   isCollapsed: boolean
@@ -24,6 +25,12 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
   const role = useRole()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   // Debug session data
   console.log('Session data:', session)
@@ -43,6 +50,27 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
       <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="hidden lg:flex">
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
       </Button>
+
+      {/* System Time and Date */}
+      <div className="flex items-center gap-3">
+        {/* <AnalogClock time={currentTime} size={36} /> */}
+        <div className="flex flex-col text-sm">
+          <div className="font-medium">
+            {currentTime.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </div>
+          {/* <div className="text-muted-foreground">
+            {currentTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit'
+            })}
+          </div> */}
+        </div>
+      </div>
 
       <div className="flex-1" />
 

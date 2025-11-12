@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
+import LogoutModal from "./modals/logout-modal"
 
 const jobSeekerNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -47,13 +48,19 @@ interface SidebarProps {
   setIsCollapsed: (collapsed: boolean) => void
 }
 
-export function Sidebar({ isCollapsed , setIsCollapsed}: SidebarProps) {
+export function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const { data: session } = useSession()
   const role = useRole()
 
   const navigation = role === "interviewer" ? interviewerNavigation : jobSeekerNavigation
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/login" })
+    setShowLogoutDialog(false)
+  }
 
   return (
     <>
@@ -120,7 +127,7 @@ export function Sidebar({ isCollapsed , setIsCollapsed}: SidebarProps) {
             {session && (
               <Button
                 variant="ghost"
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => setShowLogoutDialog(true)}
                 className={cn(
                   "w-full justify-start text-muted-foreground hover:text-foreground",
                   isCollapsed && "justify-center px-2"
@@ -142,6 +149,12 @@ export function Sidebar({ isCollapsed , setIsCollapsed}: SidebarProps) {
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutModal
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+      />
     </>
   )
 }

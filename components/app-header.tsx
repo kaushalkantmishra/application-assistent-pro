@@ -4,15 +4,6 @@ import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRole } from "@/hooks/use-role"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -21,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { LogOut, User, Settings, ChevronLeft, ChevronRight, Mail, Calendar } from "lucide-react"
+import LogoutModal from "./modals/logout-modal"
 
 interface AppHeaderProps {
   isCollapsed: boolean
@@ -31,15 +23,11 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
   const { data: session } = useSession()
   const role = useRole()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
   // Debug session data
   console.log('Session data:', session)
   console.log('User image URL:', session?.user?.image)
-
-  const handleSignOut = () => {
-    localStorage.removeItem('selectedRole')
-    signOut({ callbackUrl: "/login" })
-  }
 
   const getUserInitials = (name: string) => {
     return name
@@ -99,7 +87,7 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleSignOut}
+              onClick={() => setShowLogoutDialog(true)}
               title="Logout"
             >
               <LogOut className="h-4 w-4" />
@@ -176,6 +164,12 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Logout Confirmation Dialog */}
+      <LogoutModal
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+      />
     </header>
   )
 }

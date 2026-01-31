@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Briefcase, Users, Chrome, FileText, MessageSquare, Target, Zap } from "lucide-react"
-import { signIn, useSession } from "next-auth/react"
+import { useSession, signIn } from "next-auth/react"
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<'user' | 'interviewer'>('user')
   const [animationPhase, setAnimationPhase] = useState(0)

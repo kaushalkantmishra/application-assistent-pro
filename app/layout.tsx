@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "Application Assistant - Job Application Tracker",
   description: "Track and manage your job applications, receive reminders, and prepare for interviews",
   generator: "v0.app",
+  icons: {
+    icon: '/icon',
+  },
 }
 
 export default function RootLayout({

@@ -107,7 +107,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-3">
+          <nav className="flex-1 px-3 py-3 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
@@ -129,7 +129,7 @@ export function Sidebar() {
                       "transition-all duration-300 ease-in-out",
                       isCollapsed
                         ? "h-6 w-[20px]" 
-                        : "h-6 w-5 mr-3"
+                        : "h-4 w-5 mr-3"
                     )}
                   />
                   {!isCollapsed && item.name}

@@ -191,11 +191,86 @@ export default function ResumeEditorPage({ id }: { id: string }) {
 
     const htmlContent = resumeElement.innerHTML
 
+    // Load design config
+    const design = resumeJson.design || {}
+    const primaryColor = design.themeColor || "#000000"
+    const baseFontSize = design.fontSize || "11px"
+
+    // Map font family choices to CSS font stacks
+    const fontStyleFamily = 
+      design.fontFamily === "sans" ? "Inter, -apple-system, Arial, sans-serif" : 
+      design.fontFamily === "mono" ? "'Geist Mono', 'Courier New', Courier, monospace" : 
+      design.fontFamily === "merriweather" ? "'Merriweather', Georgia, 'Times New Roman', serif" : 
+      design.fontFamily === "playfair" ? "'Playfair Display', Georgia, 'Times New Roman', serif" : 
+      design.fontFamily === "lora" ? "'Lora', Georgia, 'Times New Roman', serif" : 
+      design.fontFamily === "roboto" ? "'Roboto', -apple-system, Arial, sans-serif" : 
+      design.fontFamily === "outfit" ? "'Outfit', -apple-system, Arial, sans-serif" : 
+      design.fontFamily === "jetbrains" ? "'JetBrains Mono', 'Courier New', Courier, monospace" : 
+      design.fontFamily === "eb-garamond" ? "'EB Garamond', Garamond, Georgia, 'Times New Roman', serif" : 
+      design.fontFamily === "computer-modern" ? "'Computer Modern Serif', Georgia, 'Times New Roman', serif" : 
+      "'Times New Roman', Georgia, serif"
+
+    // Map Google Fonts & CDNs
+    const fontImports: Record<string, string> = {
+      merriweather: "https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap",
+      playfair: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap",
+      lora: "https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap",
+      roboto: "https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap",
+      outfit: "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap",
+      jetbrains: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap",
+      "eb-garamond": "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap",
+      "computer-modern": "https://cdn.jsdelivr.net/npm/computer-modern@0.1.3/cmu-serif.min.css"
+    }
+    const selectedImport = fontImports[design.fontFamily]
+
+    // Map font sizes
+    const wordFontSize = 
+      baseFontSize === "9px" ? "8.5pt" :
+      baseFontSize === "10px" ? "9.5pt" : 
+      baseFontSize === "11px" ? "10.5pt" : 
+      baseFontSize === "12px" ? "11.5pt" : 
+      baseFontSize === "13px" ? "12pt" : 
+      baseFontSize === "14px" ? "13pt" : 
+      baseFontSize === "15px" ? "14pt" : 
+      "10.5pt"
+
+    // Map page margins
+    const wordMargin = 
+      design.margins === "supercompact" ? "0.3in" :
+      design.margins === "compact" ? "0.5in" : 
+      design.margins === "wide" ? "1.0in" : 
+      "0.75in"
+
+    // Map headings customization
+    const headingsBold = design.headingsBold !== false
+    const headingsItalic = design.headingsItalic === true
+    const headingsUppercase = design.headingsUppercase !== false
+
+    // Map line spacing/leading
+    const leadingValue = 
+      design.lineSpacing === "extratight" ? "0.95" :
+      design.lineSpacing === "normal" ? "1.2" : 
+      design.lineSpacing === "loose" ? "1.4" : 
+      "1.0"
+
+    const spaceBetweenSections = 
+      design.lineSpacing === "extratight" ? "4pt" :
+      design.lineSpacing === "normal" ? "12pt" : 
+      design.lineSpacing === "loose" ? "16pt" : 
+      "8pt"
+
+    const spaceBetweenItems = 
+      design.lineSpacing === "extratight" ? "2pt" :
+      design.lineSpacing === "normal" ? "8pt" : 
+      design.lineSpacing === "loose" ? "12pt" : 
+      "4pt"
+
     // Add MS Word document styling and metadata wrapper
     const documentTemplate = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <title>${resume?.title || "Resume"}</title>
+        ${selectedImport ? `<link rel="stylesheet" href="${selectedImport}" />` : ""}
         <!--[if gte mso 9]>
         <xml>
           <w:WordDocument>
@@ -206,15 +281,18 @@ export default function ResumeEditorPage({ id }: { id: string }) {
         </xml>
         <![endif]-->
         <style>
+          @page {
+            size: A4 portrait;
+            margin: ${wordMargin};
+          }
           body {
-            font-family: 'Times New Roman', Georgia, serif;
-            font-size: 10.5pt;
-            line-height: 1.15;
+            font-family: ${fontStyleFamily};
+            font-size: ${wordFontSize};
+            line-height: ${leadingValue};
             color: #000000;
-            padding: 20px;
           }
           a {
-            color: #000000;
+            color: ${primaryColor};
             text-decoration: underline;
           }
           .text-center { text-align: center; }
@@ -222,29 +300,41 @@ export default function ResumeEditorPage({ id }: { id: string }) {
           .italic { font-style: italic; }
           .uppercase { text-transform: uppercase; }
           
-          /* Spacing */
-          .mb-3 { margin-bottom: 8px; }
-          .mb-2 { margin-bottom: 6px; }
-          .mb-1.5 { margin-bottom: 4px; }
-          .mt-3 { margin-top: 10px; }
-          .mt-1.5 { margin-top: 4px; }
-          .mt-0.5 { margin-top: 2px; }
-          .mt-\\[2px\\] { margin-top: 2px; }
-          .pl-4 { padding-left: 16px; }
-          .pl-5 { padding-left: 20px; }
+          /* Spacing overrides based on lineSpacing options */
+          .mb-6, .mb-5\\.5, .mb-4, .mb-2\\.5 { margin-bottom: ${spaceBetweenSections}; }
+          .space-y-4 > *, .space-y-3 > *, .space-y-1\\.5 > * { margin-top: ${spaceBetweenItems}; }
           
-          /* Custom layout elements */
-          h1 { font-size: 24pt; font-family: 'Times New Roman', Georgia, serif; margin: 0; padding: 0; font-weight: normal; text-align: center; text-transform: uppercase; }
-          h3 { font-size: 11pt; font-family: 'Times New Roman', Georgia, serif; font-weight: bold; text-transform: uppercase; margin: 0; margin-top: 10px; }
-          hr { border: none; border-top: 1px solid #000000; margin: 2px 0 6px 0; }
+          /* Custom layout elements styling */
+          h1 { 
+            font-size: 24pt; 
+            color: ${primaryColor}; 
+            font-family: ${fontStyleFamily}; 
+            margin: 0; 
+            padding: 0; 
+            font-weight: ${headingsBold ? "bold" : "normal"}; 
+            font-style: ${headingsItalic ? "italic" : "normal"};
+            text-transform: ${headingsUppercase ? "uppercase" : "none"};
+            text-align: center; 
+          }
+          h3 { 
+            font-size: 11pt; 
+            color: ${primaryColor};
+            font-family: ${fontStyleFamily}; 
+            font-weight: ${headingsBold ? "bold" : "normal"}; 
+            font-style: ${headingsItalic ? "italic" : "normal"};
+            text-transform: ${headingsUppercase ? "uppercase" : "none"};
+            margin: 0; 
+            margin-top: ${spaceBetweenSections}; 
+          }
+          hr { border: none; border-top: 1px solid ${primaryColor}; margin: 2px 0 6px 0; }
           ul { margin: 2px 0 0 15px; padding: 0; list-style-type: disc; }
-          li { margin-bottom: 2px; font-family: 'Times New Roman', Georgia, serif; font-size: 10.5pt; }
+          li { margin-bottom: 2px; font-family: ${fontStyleFamily}; font-size: ${wordFontSize}; }
           
           /* Inline tables for flex rows */
           .flex { display: table; width: 100%; }
           .justify-between { display: table; width: 100%; }
           .items-baseline { display: table; width: 100%; }
-          .font-serif { font-family: 'Times New Roman', Georgia, serif; }
+          .font-serif { font-family: ${fontStyleFamily}; }
         </style>
       </head>
       <body>
@@ -379,6 +469,66 @@ export default function ResumeEditorPage({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-slate-50/50">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          /* ROOT CONTAINER RESET */
+          html, body, #__next, [data-reactroot], .flex-col, .h-screen, .flex-1 {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            background: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+
+          /* RESET PANEL GROUP DISPLAY FOR PRINT */
+          [data-panel-group] {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            position: relative !important;
+          }
+          [data-panel] {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+            position: relative !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* HIDE ALL UI PANELS & NO-PRINT ELEMENTS */
+          .no-print,
+          [data-panel].no-print,
+          [data-panel-resize-handle],
+          header,
+          aside {
+            display: none !important;
+          }
+
+          /* FORCE RESUME CONTAINER TO BE POSITIONED AT TOP */
+          #resume-print-area {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            transform: none !important; /* Reset zoom scale */
+            box-shadow: none !important;
+            border: none !important;
+            background: white !important;
+          }
+
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+        }
+      ` }} />
       {/* 1. TOP NAVBAR */}
       <header className="h-14 border-b bg-card px-4 flex items-center justify-between shrink-0 shadow-sm z-10 no-print">
         <div className="flex items-center gap-3">
@@ -648,6 +798,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                         <SelectValue placeholder="Font Size" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="9px" className="text-xs font-mono">Micro (8.5pt / 9px)</SelectItem>
                         <SelectItem value="10px" className="text-xs font-mono">Extra Small (9.5pt / 10px)</SelectItem>
                         <SelectItem value="11px" className="text-xs font-mono">Small (10.5pt / 11px) - Recommended</SelectItem>
                         <SelectItem value="12px" className="text-xs font-mono">Normal (11.5pt / 12px)</SelectItem>
@@ -669,6 +820,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                         <SelectValue placeholder="Spacing" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="extratight" className="text-xs">Extra Tight (Maximum compact)</SelectItem>
                         <SelectItem value="tight" className="text-xs">Tight (Compact, fits more content)</SelectItem>
                         <SelectItem value="normal" className="text-xs">Normal (Balanced layout)</SelectItem>
                         <SelectItem value="loose" className="text-xs">Loose (Generous spacing)</SelectItem>
@@ -687,6 +839,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                         <SelectValue placeholder="Margins" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="supercompact" className="text-xs">Super Compact (0.3 in / Maximize space)</SelectItem>
                         <SelectItem value="compact" className="text-xs">Compact (0.5 in / Fits more content)</SelectItem>
                         <SelectItem value="normal" className="text-xs">Normal (0.75 in / Standard)</SelectItem>
                         <SelectItem value="wide" className="text-xs">Wide (1.0 in / Generous white space)</SelectItem>

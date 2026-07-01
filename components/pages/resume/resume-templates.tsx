@@ -67,16 +67,19 @@ export function renderDescription(text: string, fontStyle?: React.CSSProperties,
   const isBulletList = lines.length > 1 || lines.some(line => /^[\s•\-\*]/.test(line))
 
   const leadingClass = 
+    lineSpacing === "extratight" ? "leading-[1.15]" :
     lineSpacing === "normal" ? "leading-normal" : 
     lineSpacing === "loose" ? "leading-relaxed" : 
     "leading-tight"
 
   const spaceBetweenBullets = 
+    lineSpacing === "extratight" ? "space-y-0" :
     lineSpacing === "normal" ? "space-y-0.5" : 
     lineSpacing === "loose" ? "space-y-1.5" : 
     "space-y-0"
 
   const mtClass = 
+    lineSpacing === "extratight" ? "mt-0" :
     lineSpacing === "normal" ? "mt-1" : 
     lineSpacing === "loose" ? "mt-2" : 
     "mt-0.5"
@@ -95,7 +98,7 @@ export function renderDescription(text: string, fontStyle?: React.CSSProperties,
   }
 
   return (
-    <p className={`${mtClass} whitespace-pre-line ${leadingClass} text-slate-900`} style={fontStyle}>
+    <p className={`${mtClass} ${leadingClass} text-slate-900`} style={fontStyle}>
       {parseBoldText(text)}
     </p>
   )
@@ -132,30 +135,41 @@ function getFontStyleFamily(family?: string, defaultFamily: string = "Times New 
 
 function getSpacingAndMargins(design: Record<string, any>) {
   const spaceBetweenSections = 
+    design.lineSpacing === "extratight" ? "mb-0.5" :
     design.lineSpacing === "normal" ? "mb-4" : 
     design.lineSpacing === "loose" ? "mb-5.5" : 
     "mb-2.5"
     
   const spaceBetweenItems = 
+    design.lineSpacing === "extratight" ? "space-y-0" :
     design.lineSpacing === "normal" ? "space-y-3" : 
     design.lineSpacing === "loose" ? "space-y-4" : 
     "space-y-1.5"
 
   const leadingClass = 
+    design.lineSpacing === "extratight" ? "leading-[1.15]" :
     design.lineSpacing === "normal" ? "leading-normal" : 
     design.lineSpacing === "loose" ? "leading-relaxed" : 
     "leading-tight"
 
   const marginPaddingClass = 
+    design.margins === "supercompact" ? "pt-1.5 pb-1.5 px-4" :
     design.margins === "compact" ? "p-5" : 
     design.margins === "wide" ? "p-10" : 
     "p-8"
+
+  const itemMarginBottom = 
+    design.lineSpacing === "extratight" ? "mb-0" :
+    design.lineSpacing === "normal" ? "mb-2" : 
+    design.lineSpacing === "loose" ? "mb-3" : 
+    "mb-1.5"
 
   return {
     spaceBetweenSections,
     spaceBetweenItems,
     leadingClass,
-    marginPaddingClass
+    marginPaddingClass,
+    itemMarginBottom
   }
 }
 
@@ -793,8 +807,23 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
     spaceBetweenSections,
     spaceBetweenItems,
     leadingClass,
-    marginPaddingClass
+    marginPaddingClass,
+    itemMarginBottom
   } = getSpacingAndMargins(design)
+
+  const headerMarginBottom = 
+    design.lineSpacing === "extratight" ? "mb-0.5" :
+    design.lineSpacing === "tight" ? "mb-2" : 
+    "mb-3"
+
+  const sectionHeaderMarginBottom = 
+    design.lineSpacing === "extratight" ? "mb-0" :
+    design.lineSpacing === "tight" ? "mb-1" : 
+    "mb-1.5"
+
+  const itemTopMargin = 
+    design.lineSpacing === "extratight" ? "mt-[0px]" : 
+    "mt-[1px]"
 
   // Title Align Mappings
   const alignClass = 
@@ -816,18 +845,31 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
 
   // Dynamic Font sizing variables
   const nameSizeStyle = {
-    fontSize: `${Math.round(sizes.base * 2.3)}px`,
+    fontSize: `${
+      design.lineSpacing === "extratight" ? Math.round(sizes.base * 1.7) :
+      design.lineSpacing === "tight" ? Math.round(sizes.base * 2.0) :
+      Math.round(sizes.base * 2.3)
+    }px`,
     color: primaryColor
   }
   const sectionTitleSizeStyle = {
-    fontSize: `${Math.round(sizes.base * 1.1 * 10) / 10}px`,
+    fontSize: `${
+      design.lineSpacing === "extratight" ? Math.round(sizes.base * 0.95 * 10) / 10 :
+      Math.round(sizes.base * 1.1 * 10) / 10
+    }px`,
     color: primaryColor
   }
   const itemTitleSizeStyle = {
-    fontSize: `${Math.round(sizes.base * 1.05 * 10) / 10}px`
+    fontSize: `${
+      design.lineSpacing === "extratight" ? Math.round(sizes.base * 0.95 * 10) / 10 :
+      Math.round(sizes.base * 1.05 * 10) / 10
+    }px`
   }
   const subtitleSizeStyle = {
-    fontSize: `${Math.round(sizes.base * 0.95 * 10) / 10}px`
+    fontSize: `${
+      design.lineSpacing === "extratight" ? Math.round(sizes.base * 0.85 * 10) / 10 :
+      Math.round(sizes.base * 0.95 * 10) / 10
+    }px`
   }
 
   // Generate contact items list
@@ -897,7 +939,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
         style={rootStyle}
       >
         {/* Title Header */}
-        <div className={`${alignClass} mb-3`}>
+        <div className={`${alignClass} ${headerMarginBottom}`}>
           <h1 className={`${headingStyleClass}`} style={nameSizeStyle}>
             {personalInfo.fullName || "Your Name"}
           </h1>
@@ -905,7 +947,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
             <p className="text-slate-700 italic mt-0.5" style={subtitleSizeStyle}>{personalInfo.headline}</p>
           )}
           {/* Contact Links Row */}
-          <div className={`flex flex-wrap ${justifyClass} items-center gap-x-2.5 gap-y-0.5 mt-1.5 font-medium text-black`} style={subtitleSizeStyle}>
+          <div className={`flex flex-wrap ${justifyClass} items-center gap-x-2.5 gap-y-0.5 ${design.lineSpacing === "extratight" ? "mt-0.5" : "mt-1.5"} font-medium text-black`} style={subtitleSizeStyle}>
             {contactLinks.map((link, idx) => (
               <React.Fragment key={idx}>
                 {link}
@@ -918,7 +960,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
         {/* Summary Section (if visible) */}
         {summary.visible !== false && summary.text && (
           <div className={spaceBetweenSections}>
-            <div className={`flex flex-col mb-1 ${isCenteredHeader ? "items-center" : "items-start"}`}>
+            <div className={`flex flex-col ${sectionHeaderMarginBottom} ${isCenteredHeader ? "items-center" : "items-start"}`}>
               <h3 className={`${headingStyleClass} w-full ${isCenteredHeader ? "text-center" : "text-left"}`} style={sectionTitleSizeStyle}>
                 {summary.title || "Professional Summary"}
               </h3>
@@ -954,7 +996,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
           return (
             <div key={sectionId} className={spaceBetweenSections}>
               {/* Section Header Divider */}
-              <div className={`flex flex-col mb-1.5 ${isCenteredHeader ? "items-center" : "items-start"}`}>
+              <div className={`flex flex-col ${sectionHeaderMarginBottom} ${isCenteredHeader ? "items-center" : "items-start"}`}>
                 <h3 className={`${headingStyleClass} w-full ${isCenteredHeader ? "text-center" : "text-left"}`} style={sectionTitleSizeStyle}>
                   {section.title || sectionId.replace(/([A-Z])/g, " $1")}
                 </h3>
@@ -978,12 +1020,12 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                     // 1. EDUCATION RENDERING
                     if (sectionId === "education") {
                       return (
-                        <div key={item.id} className="leading-normal mb-1.5" style={sizes.textXs}>
+                        <div key={item.id} className={`leading-normal break-inside-avoid ${itemMarginBottom}`} style={sizes.textXs}>
                           <div className="flex justify-between items-baseline">
                             <span className="font-bold text-black" style={itemTitleSizeStyle}>{item.institution}</span>
                             <span className="font-bold text-black" style={sizes.textXs}>{item.startDate} {item.endDate ? `– ${item.endDate}` : ""}</span>
                           </div>
-                          <div className="flex justify-between items-baseline mt-[1px]">
+                          <div className={`flex justify-between items-baseline ${itemTopMargin}`}>
                             <span className="italic text-slate-900" style={subtitleSizeStyle}>
                               {item.degree}
                               {item.fieldOfStudy ? ` - ${item.fieldOfStudy}` : ""}
@@ -1012,7 +1054,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                     // 2. EXPERIENCE RENDERING
                     if (sectionId === "experience") {
                       return (
-                        <div key={item.id} className="leading-normal mb-2" style={sizes.textXs}>
+                        <div key={item.id} className={`leading-normal break-inside-avoid ${itemMarginBottom}`} style={sizes.textXs}>
                           {/* Line 1: Role, Company (left) | Dates (right) */}
                           <div className="flex justify-between items-baseline">
                             <span className="font-bold text-black inline-flex items-center gap-1 flex-wrap" style={itemTitleSizeStyle}>
@@ -1027,7 +1069,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                           </div>
 
                           {/* Line 2: Company Subheading (left) | Location (right) */}
-                          <div className="flex justify-between items-baseline mt-[1px]">
+                          <div className={`flex justify-between items-baseline ${itemTopMargin}`}>
                             <span className="italic text-slate-900" style={subtitleSizeStyle}>{item.companySub || ""}</span>
                             <span className="italic text-slate-900" style={subtitleSizeStyle}>{item.location}</span>
                           </div>
@@ -1041,7 +1083,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                     // 3. PROJECTS RENDERING
                     if (sectionId === "projects") {
                       return (
-                        <div key={item.id} className="leading-normal mb-1.5" style={sizes.textXs}>
+                        <div key={item.id} className={`leading-normal break-inside-avoid ${itemMarginBottom}`} style={sizes.textXs}>
                           <div className="flex justify-between items-baseline">
                             <span style={sizes.textXs}>
                               <span className="font-bold text-black" style={itemTitleSizeStyle}>{item.name}</span>
@@ -1068,7 +1110,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                     // 4. CERTIFICATES / CERTIFICATIONS RENDERING
                     if (sectionId === "certificates") {
                       return (
-                        <div key={item.id} className="leading-tight font-normal" style={sizes.textXs}>
+                        <div key={item.id} className="leading-tight font-normal break-inside-avoid" style={sizes.textXs}>
                           <div className="flex justify-between items-baseline w-full">
                             <span>
                               <span className="font-bold text-black">• {item.name}</span>
@@ -1089,7 +1131,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                     if (sectionId === "codingProfiles") {
                       const hasSolved = item.username.toLowerCase().includes("solved") || item.platform.toLowerCase().includes("solved")
                       return (
-                        <div key={item.id} className="leading-tight flex items-center" style={sizes.textXs}>
+                        <div key={item.id} className="leading-tight flex items-center break-inside-avoid" style={sizes.textXs}>
                           <span className="mr-2">•</span>
                           <span>
                             {hasSolved ? (
@@ -1113,7 +1155,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
 
                     // General fallback for other repeatable sections
                     return (
-                      <div key={item.id} className="leading-normal mb-1.5" style={sizes.textXs}>
+                      <div key={item.id} className={`leading-normal break-inside-avoid ${itemMarginBottom}`} style={sizes.textXs}>
                         <div className="flex justify-between items-baseline">
                           <span className="font-bold text-black" style={itemTitleSizeStyle}>
                             {item.company || item.institution || item.name || item.title || item.organization || item.platform}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { RoleGuard } from "@/components/role-guard"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { mockInterviewerProfiles, mockInterviewSessions } from "@/lib/mock-data"
+import { type InterviewerProfile } from "@/types"
 import { Search, Star, Calendar, Users, Github, Linkedin, MapPin, Briefcase, Clock, Award } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 const interviewTypeColors = {
   Technical: "bg-blue-100 text-blue-800",
@@ -20,18 +21,82 @@ const interviewTypeColors = {
   HR: "bg-orange-100 text-orange-800",
 }
 
+interface InterviewSession {
+  id: string
+  interviewerId: string
+  candidateId: string
+  scheduledDate: string
+  duration: number
+  type: string
+  status: string
+  meetingLink?: string
+  feedback?: string
+  rating?: number
+  notes?: string
+}
+
+const mockInterviewSessions: InterviewSession[] = [
+  {
+    id: "1",
+    interviewerId: "1",
+    candidateId: "user1",
+    scheduledDate: "2024-01-25T10:00:00Z",
+    duration: 60,
+    type: "Technical",
+    status: "Scheduled",
+    meetingLink: "https://meet.google.com/abc-defg-hij",
+  },
+  {
+    id: "2",
+    interviewerId: "2",
+    candidateId: "user1",
+    scheduledDate: "2024-01-20T14:00:00Z",
+    duration: 45,
+    type: "Behavioral",
+    status: "Completed",
+    feedback: "Great communication skills and problem-solving approach. Shows strong leadership potential.",
+    rating: 4,
+    notes: "Candidate demonstrated excellent STAR method usage and provided concrete examples.",
+  },
+  {
+    id: "3",
+    interviewerId: "3",
+    candidateId: "user2",
+    scheduledDate: "2024-01-28T11:00:00Z",
+    duration: 30,
+    type: "HR",
+    status: "Scheduled",
+    meetingLink: "https://zoom.us/j/123456789",
+  },
+]
+
 export default function InterviewerDirectoryPage() {
+  const [profiles, setProfiles] = useState<InterviewerProfile[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCompany, setSelectedCompany] = useState<string>("all")
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("all")
   const [selectedInterviewType, setSelectedInterviewType] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("rating")
+  const [loading, setLoading] = useState(true)
 
-  const companies = Array.from(new Set(mockInterviewerProfiles.map((profile) => profile.company)))
-  const specializations = Array.from(new Set(mockInterviewerProfiles.flatMap((profile) => profile.specializations)))
-  const interviewTypes = Array.from(new Set(mockInterviewerProfiles.flatMap((profile) => profile.interviewTypes)))
+  useEffect(() => {
+    fetch("/api/interviewers")
+      .then((res) => res.json())
+      .then((data) => {
+        setProfiles(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch interviewers:", err)
+        setLoading(false)
+      })
+  }, [])
 
-  const filteredProfiles = mockInterviewerProfiles
+  const companies = Array.from(new Set(profiles.map((profile) => profile.company).filter(Boolean)))
+  const specializations = Array.from(new Set(profiles.flatMap((profile) => profile.specializations).filter(Boolean)))
+  const interviewTypes = Array.from(new Set(profiles.flatMap((profile) => profile.interviewTypes).filter(Boolean)))
+
+  const filteredProfiles = profiles
     .filter((profile) => {
       const matchesSearch =
         profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,7 +125,7 @@ export default function InterviewerDirectoryPage() {
       }
     })
 
-  const topInterviewers = mockInterviewerProfiles
+  const topInterviewers = profiles
     .filter((profile) => profile.isActive)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 3)
@@ -71,17 +136,17 @@ export default function InterviewerDirectoryPage() {
     .slice(0, 5)
 
   const stats = {
-    totalInterviewers: mockInterviewerProfiles.filter((p) => p.isActive).length,
-    totalInterviews: mockInterviewerProfiles.reduce((sum, p) => sum + p.totalInterviews, 0),
-    averageRating: (
-      mockInterviewerProfiles.reduce((sum, p) => sum + p.rating, 0) / mockInterviewerProfiles.length
-    ).toFixed(1),
+    totalInterviewers: profiles.filter((p) => p.isActive).length,
+    totalInterviews: profiles.reduce((sum, p) => sum + p.totalInterviews, 0),
+    averageRating: profiles.length > 0 ? (
+      profiles.reduce((sum, p) => sum + p.rating, 0) / profiles.length
+    ).toFixed(1) : "5.0",
     companiesCount: companies.length,
   }
 
   return (
     <RoleGuard
-      allowedRoles={["job_seeker"]}
+      allowedRoles={["user"]}
       fallbackMessage="The interviewer directory is available for job seekers to find and connect with interviewers."
     >
       <>
@@ -234,13 +299,17 @@ export default function InterviewerDirectoryPage() {
             </Card>
 
             {/* Interviewer Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProfiles.map((profile) => (
-                <InterviewerCard key={profile.id} profile={profile} />
-              ))}
-            </div>
+            {loading ? (
+              <AppLoader message="Connecting with the expert interviewer panel" />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProfiles.map((profile) => (
+                  <InterviewerCard key={profile.id} profile={profile} />
+                ))}
+              </div>
+            )}
 
-            {filteredProfiles.length === 0 && (
+            {!loading && filteredProfiles.length === 0 && (
               <Card className="text-center py-12">
                 <CardContent>
                   <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -312,7 +381,7 @@ export default function InterviewerDirectoryPage() {
               <CardContent>
                 <div className="space-y-4">
                   {recentSessions.map((session) => {
-                    const interviewer = mockInterviewerProfiles.find((p) => p.id === session.interviewerId)
+                    const interviewer = profiles.find((p: InterviewerProfile) => p.id === session.interviewerId)
                     if (!interviewer) return null
 
                     return (
@@ -322,7 +391,7 @@ export default function InterviewerDirectoryPage() {
                           <AvatarFallback>
                             {interviewer.name
                               .split(" ")
-                              .map((n) => n[0])
+                              .map((n: string) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
@@ -356,7 +425,7 @@ export default function InterviewerDirectoryPage() {
   )
 }
 
-function InterviewerCard({ profile }: { profile: (typeof mockInterviewerProfiles)[0] }) {
+function InterviewerCard({ profile }: { profile: InterviewerProfile }) {
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">

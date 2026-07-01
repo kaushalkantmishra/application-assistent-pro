@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,21 +8,64 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { mockUserProfile } from "@/lib/mock-data"
 import { Save, Upload, X, Plus } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState(mockUserProfile)
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [newSkill, setNewSkill] = useState("")
   const [newRole, setNewRole] = useState("")
   const [newCompany, setNewCompany] = useState("")
   const [newLocation, setNewLocation] = useState("")
 
+  useEffect(() => {
+    fetch("/api/users/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        // Ensure arrays are initialized
+        setProfile({
+          ...data,
+          skills: data.skills || [],
+          preferredRoles: data.preferredRoles || [],
+          preferredCompanies: data.preferredCompanies || [],
+          preferredLocations: data.preferredLocations || [],
+        })
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to load profile:", err)
+        setLoading(false)
+      })
+  }, [])
+
   const handleSave = () => {
-    // In a real app, this would save to a backend
-    setIsEditing(false)
-    console.log("Profile saved:", profile)
+    fetch("/api/users/profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        phone: profile.phone,
+        location: profile.location,
+        education: profile.education,
+        experience: profile.experience,
+        skills: profile.skills,
+        preferredRoles: profile.preferredRoles,
+        preferredCompanies: profile.preferredCompanies,
+        preferredLocations: profile.preferredLocations,
+        resumeFileName: profile.resumeFileName,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setProfile((prev: any) => ({ ...prev, ...data }))
+        setIsEditing(false)
+      })
+      .catch((err) => {
+        console.error("Failed to save profile:", err)
+      })
   }
 
   const addSkill = () => {
@@ -33,7 +76,7 @@ export default function ProfilePage() {
   }
 
   const removeSkill = (skillToRemove: string) => {
-    setProfile({ ...profile, skills: profile.skills.filter((skill) => skill !== skillToRemove) })
+    setProfile({ ...profile, skills: profile.skills.filter((skill: string) => skill !== skillToRemove) })
   }
 
   const addPreferredRole = () => {
@@ -44,7 +87,7 @@ export default function ProfilePage() {
   }
 
   const removePreferredRole = (roleToRemove: string) => {
-    setProfile({ ...profile, preferredRoles: profile.preferredRoles.filter((role) => role !== roleToRemove) })
+    setProfile({ ...profile, preferredRoles: profile.preferredRoles.filter((role: string) => role !== roleToRemove) })
   }
 
   const addPreferredCompany = () => {
@@ -57,7 +100,7 @@ export default function ProfilePage() {
   const removePreferredCompany = (companyToRemove: string) => {
     setProfile({
       ...profile,
-      preferredCompanies: profile.preferredCompanies.filter((company) => company !== companyToRemove),
+      preferredCompanies: profile.preferredCompanies.filter((company: string) => company !== companyToRemove),
     })
   }
 
@@ -71,8 +114,12 @@ export default function ProfilePage() {
   const removePreferredLocation = (locationToRemove: string) => {
     setProfile({
       ...profile,
-      preferredLocations: profile.preferredLocations.filter((location) => location !== locationToRemove),
+      preferredLocations: profile.preferredLocations.filter((location: string) => location !== locationToRemove),
     })
+  }
+
+  if (loading) {
+    return <AppLoader message="Retrieving your profile & job preferences" />
   }
 
   return (
@@ -208,7 +255,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill) => (
+                {profile.skills.map((skill: string) => (
                   <Badge key={skill} variant="secondary" className="flex items-center gap-1">
                     {skill}
                     {isEditing && (
@@ -246,7 +293,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {profile.preferredRoles.map((role) => (
+                {profile.preferredRoles.map((role: string) => (
                   <Badge key={role} variant="outline" className="flex items-center gap-1">
                     {role}
                     {isEditing && (
@@ -284,7 +331,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {profile.preferredCompanies.map((company) => (
+                {profile.preferredCompanies.map((company: string) => (
                   <Badge key={company} variant="outline" className="flex items-center gap-1">
                     {company}
                     {isEditing && (
@@ -322,7 +369,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {profile.preferredLocations.map((location) => (
+                {profile.preferredLocations.map((location: string) => (
                   <Badge key={location} variant="outline" className="flex items-center gap-1">
                     {location}
                     {isEditing && (

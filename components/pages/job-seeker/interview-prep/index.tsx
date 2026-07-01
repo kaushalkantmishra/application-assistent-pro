@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,16 +8,98 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { mockInterviewQuestions, mockInterviewTips, type InterviewQuestion, type InterviewTip } from "@/lib/mock-data"
+import { type InterviewQuestion } from "@/types"
 import { MessageSquare, Lightbulb, ChevronDown, ChevronRight, Brain, Clock, Star, AlertCircle } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
+
+interface InterviewTip {
+  id: string
+  category: "Before Interview" | "During Interview" | "After Interview"
+  title: string
+  description: string
+  importance: "High" | "Medium" | "Low"
+}
+
+const mockInterviewTips: InterviewTip[] = [
+  {
+    id: "1",
+    category: "Before Interview",
+    title: "Research the Company Thoroughly",
+    description: "Study the company's mission, values, recent news, products, and competitors. Check their social media and recent press releases.",
+    importance: "High",
+  },
+  {
+    id: "2",
+    category: "Before Interview",
+    title: "Prepare Your STAR Stories",
+    description: "Have 3-5 stories ready using the Situation, Task, Action, Result framework to answer behavioral questions.",
+    importance: "High",
+  },
+  {
+    id: "3",
+    category: "Before Interview",
+    title: "Practice Technical Questions",
+    description: "Review common technical questions for your role and practice coding problems on platforms like LeetCode or HackerRank.",
+    importance: "High",
+  },
+  {
+    id: "4",
+    category: "During Interview",
+    title: "Ask Thoughtful Questions",
+    description: "Prepare 5-7 questions about the role, team, company culture, and growth opportunities to show your genuine interest.",
+    importance: "High",
+  },
+  {
+    id: "5",
+    category: "During Interview",
+    title: "Use the STAR Method",
+    description: "Structure your behavioral answers with Situation, Task, Action, and Result to provide clear, comprehensive responses.",
+    importance: "Medium",
+  },
+  {
+    id: "6",
+    category: "During Interview",
+    title: "Show Enthusiasm and Energy",
+    description: "Maintain good eye contact, smile genuinely, and show enthusiasm for the role and company throughout the interview.",
+    importance: "Medium",
+  },
+  {
+    id: "7",
+    category: "After Interview",
+    title: "Send a Thank You Email",
+    description: "Send a personalized thank you email within 24 hours, reiterating your interest and highlighting key discussion points.",
+    importance: "High",
+  },
+  {
+    id: "8",
+    category: "After Interview",
+    title: "Follow Up Appropriately",
+    description: "If you don't hear back within the expected timeframe, send a polite follow-up email to check on the status.",
+    importance: "Medium",
+  },
+]
 
 export default function InterviewPrepPage() {
-  const [questions] = useState<InterviewQuestion[]>(mockInterviewQuestions)
+  const [questions, setQuestions] = useState<InterviewQuestion[]>([])
   const [tips] = useState<InterviewTip[]>(mockInterviewTips)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
 
-  const categories = Array.from(new Set(questions.map((q) => q.category)))
+  useEffect(() => {
+    fetch("/api/interview-prep")
+      .then((res) => res.json())
+      .then((data) => {
+        setQuestions(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch interview questions:", err)
+        setLoading(false)
+      })
+  }, [])
+
+  const categories = Array.from(new Set(questions.map((q) => q.category).filter(Boolean)))
   const filteredQuestions =
     selectedCategory === "all" ? questions : questions.filter((q) => q.category === selectedCategory)
 
@@ -115,8 +197,11 @@ export default function InterviewPrepPage() {
 
           {/* Questions List */}
           <div className="space-y-4">
-            {filteredQuestions.map((question) => (
-              <Card key={question.id}>
+            {loading ? (
+              <AppLoader message="Assembling practice questions & sample answers" />
+            ) : filteredQuestions.length > 0 ? (
+              filteredQuestions.map((question) => (
+                <Card key={question.id}>
                 <Collapsible>
                   <CollapsibleTrigger className="w-full" onClick={() => toggleQuestion(question.id)}>
                     <CardHeader className="hover:bg-muted/50 transition-colors">
@@ -170,7 +255,16 @@ export default function InterviewPrepPage() {
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
-            ))}
+            ))
+          ) : (
+            <Card>
+              <CardContent className="pt-6 text-center py-8">
+                <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No questions found</h3>
+                <p className="text-muted-foreground">Try adjusting your category filter</p>
+              </CardContent>
+            </Card>
+          )}
           </div>
         </TabsContent>
 

@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Briefcase, Users, Chrome, FileText, MessageSquare, Target, Zap } from "lucide-react"
 import { useSession, signIn } from "next-auth/react"
+import { AppLoader } from "@/components/app-loader"
+
 export default function LoginPage() {
   const [selectedRole, setSelectedRole] = useState<'user' | 'interviewer'>('user')
   const [animationPhase, setAnimationPhase] = useState(0)
@@ -24,11 +26,19 @@ export default function LoginPage() {
     return () => clearInterval(interval)
   }, [])
 
- useEffect(() => {
+  useEffect(() => {
     if (status === "authenticated" && session?.user) {
       router.push("/")
     }
   }, [status, session, router])
+
+  if (status === "loading" || status === "authenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 w-full">
+        <AppLoader variant="radar" message="Authenticating session and preparing workspace" />
+      </div>
+    )
+  }
 
   const handleGoogleLogin = () => {
     localStorage.setItem('selectedRole', selectedRole)

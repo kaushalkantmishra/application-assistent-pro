@@ -1,34 +1,62 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { mockApplications, mockUserProfile } from "@/lib/mock-data"
+import { type Application } from "@/types"
 import { Plus, Calendar, TrendingUp, FileText, Clock } from "lucide-react"
 import Link from "next/link"
+import { AppLoader } from "@/components/app-loader"
 
 export default function Dashboard() {
+  const [profile, setProfile] = useState<any>(null)
+  const [applications, setApplications] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/users/profile").then((res) => res.json()),
+      fetch("/api/applications").then((res) => res.json()),
+    ])
+      .then(([profileData, appsData]) => {
+        setProfile(profileData)
+        setApplications(appsData)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to load dashboard data:", err)
+        setLoading(false)
+      })
+  }, [])
+
   const stats = {
-    totalApplications: mockApplications.length,
-    interviews: mockApplications.filter((app) => app.status === "Interview Scheduled").length,
-    offers: mockApplications.filter((app) => app.status === "Offer Received").length,
-    pending: mockApplications.filter((app) => app.status === "Applied").length,
+    totalApplications: applications.length,
+    interviews: applications.filter((app) => app.status === "Interview Scheduled").length,
+    offers: applications.filter((app) => app.status === "Offer Received").length,
+    pending: applications.filter((app) => app.status === "Applied").length,
   }
 
-  const upcomingDeadlines = mockApplications
+  const upcomingDeadlines = applications
     .filter((app) => app.deadline)
     .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
     .slice(0, 3)
 
-  const recentApplications = mockApplications
+  const recentApplications = applications
     .sort((a, b) => new Date(b.appliedDate).getTime() - new Date(a.appliedDate).getTime())
     .slice(0, 3)
+
+  const userName = profile?.name ? profile.name.split(" ")[0] : "User"
+
+  if (loading) {
+    return <AppLoader message="Loading your dashboard stats" />
+  }
 
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${mockUserProfile.name.split(" ")[0]}!`}
+        title={`Welcome back, ${userName}!`}
         description="Here's an overview of your job application progress"
       >
         <Button asChild>
@@ -71,7 +99,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-accent">{stats.offers}</div>
             <p className="text-xs text-muted-foreground">
-              Success rate: {Math.round((stats.offers / stats.totalApplications) * 100)}%
+              Success rate: {stats.totalApplications > 0 ? Math.round((stats.offers / stats.totalApplications) * 100) : 0}%
             </p>
           </CardContent>
         </Card>

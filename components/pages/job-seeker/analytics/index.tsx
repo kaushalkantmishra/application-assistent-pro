@@ -1,11 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { mockApplications } from "@/lib/mock-data"
 import {
   BarChart,
   Bar,
@@ -21,13 +20,29 @@ import {
   Line,
 } from "recharts"
 import { Calendar, TrendingUp, Target, Clock, Award, AlertCircle } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("all")
+  const [applications, setApplications] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/applications")
+      .then((res) => res.json())
+      .then((data) => {
+        setApplications(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch applications:", err)
+        setLoading(false)
+      })
+  }, [])
 
   // Calculate analytics data
-  const totalApplications = mockApplications.length
-  const statusCounts = mockApplications.reduce(
+  const totalApplications = applications.length
+  const statusCounts = applications.reduce(
     (acc, app) => {
       acc[app.status] = (acc[app.status] || 0) + 1
       return acc
@@ -35,14 +50,14 @@ export default function AnalyticsPage() {
     {} as Record<string, number>,
   )
 
-  const successRate = Math.round(((statusCounts["Offer Received"] || 0) / totalApplications) * 100)
-  const interviewRate = Math.round(((statusCounts["Interview Scheduled"] || 0) / totalApplications) * 100)
+  const successRate = totalApplications > 0 ? Math.round(((statusCounts["Offer Received"] || 0) / totalApplications) * 100) : 0
+  const interviewRate = totalApplications > 0 ? Math.round(((statusCounts["Interview Scheduled"] || 0) / totalApplications) * 100) : 0
 
   // Data for charts
   const statusData = Object.entries(statusCounts).map(([status, count]) => ({
     status,
-    count,
-    percentage: Math.round((count / totalApplications) * 100),
+    count: count as number,
+    percentage: totalApplications > 0 ? Math.round(((count as number) / totalApplications) * 100) : 0,
   }))
 
   const pieData = statusData.map((item) => ({
@@ -50,16 +65,41 @@ export default function AnalyticsPage() {
     value: item.count,
   }))
 
-  // Monthly application data (mock)
-  const monthlyData = [
-    { month: "Oct", applications: 2, interviews: 1, offers: 0 },
-    { month: "Nov", applications: 3, interviews: 2, offers: 1 },
-    { month: "Dec", applications: 4, interviews: 1, offers: 0 },
-    { month: "Jan", applications: 6, interviews: 3, offers: 2 },
-  ]
+  // Monthly stats
+  const getMonthlyStats = () => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const monthlyMap = {} as Record<string, { month: string; applications: number; interviews: number; offers: number }>
+    
+    // Default last 4 months
+    const today = new Date()
+    for (let i = 3; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const mLabel = months[d.getMonth()]
+      monthlyMap[mLabel] = { month: mLabel, applications: 0, interviews: 0, offers: 0 }
+    }
+
+    applications.forEach((app) => {
+      if (app.appliedDate) {
+        const d = new Date(app.appliedDate)
+        const mLabel = months[d.getMonth()]
+        if (monthlyMap[mLabel]) {
+          monthlyMap[mLabel].applications++
+          if (app.status === "Interview Scheduled") {
+            monthlyMap[mLabel].interviews++
+          } else if (app.status === "Offer Received") {
+            monthlyMap[mLabel].offers++
+          }
+        }
+      }
+    })
+
+    return Object.values(monthlyMap)
+  }
+
+  const monthlyData = getMonthlyStats()
 
   // Company data
-  const companyData = mockApplications.reduce(
+  const companyData = applications.reduce(
     (acc, app) => {
       acc[app.company] = (acc[app.company] || 0) + 1
       return acc
@@ -68,17 +108,17 @@ export default function AnalyticsPage() {
   )
 
   const topCompanies = Object.entries(companyData)
-    .sort(([, a], [, b]) => b - a)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 5)
     .map(([company, count]) => ({ company, count }))
 
   // Upcoming deadlines
-  const upcomingDeadlines = mockApplications
+  const upcomingDeadlines = applications
     .filter((app) => app.deadline)
     .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())
     .slice(0, 5)
 
-  const COLORS = ["#0891b2", "#ec4899", "#4b5563", "#be123c", "#f9fafb"]
+  const COLORS = ["#2563eb", "#10b981", "#64748b", "#ef4444", "#f59e0b"]
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -95,6 +135,10 @@ export default function AnalyticsPage() {
       default:
         return "outline"
     }
+  }
+
+  if (loading) {
+    return <AppLoader variant="radar" message="Compiling analytics & tracking indicators" />
   }
 
   return (

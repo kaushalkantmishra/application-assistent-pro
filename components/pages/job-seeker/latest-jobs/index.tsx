@@ -1,25 +1,42 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { mockJobs, type Job } from "@/lib/mock-data"
+import { type Job } from "@/types"
 import { Search, MapPin, Calendar, DollarSign, Briefcase, Clock, ExternalLink } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 export default function LatestJobsPage() {
-  const [jobs] = useState<Job[]>(mockJobs)
-  const [filteredJobs, setFilteredJobs] = useState<Job[]>(mockJobs)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [locationFilter, setLocationFilter] = useState("all")
+  const [loading, setLoading] = useState(true)
+
+  // Fetch jobs from API
+  useEffect(() => {
+    fetch("/api/jobs")
+      .then((res) => res.json())
+      .then((data) => {
+        setJobs(data)
+        setFilteredJobs(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch jobs:", err)
+        setLoading(false)
+      })
+  }, [])
 
   // Get unique job types and locations for filters
-  const jobTypes = Array.from(new Set(jobs.map((job) => job.type)))
-  const locations = Array.from(new Set(jobs.map((job) => job.location)))
+  const jobTypes = Array.from(new Set(jobs.map((job) => job.type).filter(Boolean)))
+  const locations = Array.from(new Set(jobs.map((job) => job.location).filter(Boolean)))
 
   // Filter jobs
   const filterJobs = () => {
@@ -46,9 +63,9 @@ export default function LatestJobsPage() {
   }
 
   // Apply filters when dependencies change
-  useState(() => {
+  useEffect(() => {
     filterJobs()
-  })
+  }, [jobs, searchQuery, typeFilter, locationFilter])
 
   const isDeadlineNear = (deadline: string) => {
     const deadlineDate = new Date(deadline)
@@ -146,7 +163,9 @@ export default function LatestJobsPage() {
 
       {/* Jobs List */}
       <div className="space-y-4">
-        {filteredJobs.length > 0 ? (
+        {loading ? (
+          <AppLoader variant="skeleton" />
+        ) : filteredJobs.length > 0 ? (
           filteredJobs.map((job) => (
             <Card key={job.id} className="hover:shadow-md transition-shadow">
               <CardHeader>

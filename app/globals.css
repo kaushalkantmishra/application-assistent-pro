@@ -4,75 +4,75 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens to match job application tracking design brief */
+  /* Updated color tokens to match professional job application tracking design */
   --background: #f9fafb; /* Light Gray for main backgrounds */
-  --foreground: #4b5563; /* Dark Gray for text */
+  --foreground: #1e293b; /* Slate-800 for readable text */
   --card: #ffffff; /* White for cards */
-  --card-foreground: #4b5563; /* Dark Gray for card text */
+  --card-foreground: #1e293b; /* Slate-800 for card text */
   --popover: #ffffff; /* White for popover backgrounds */
-  --popover-foreground: #4b5563; /* Dark Gray for popover text */
-  --primary: #0891b2; /* Cyan for primary actions */
+  --popover-foreground: #1e293b; /* Slate-800 for popover text */
+  --primary: #2563eb; /* Royal Blue for primary actions */
   --primary-foreground: #ffffff; /* White for primary button text */
-  --secondary: #ec4899; /* Pink for accents */
+  --secondary: #64748b; /* Slate-500 for secondary actions */
   --secondary-foreground: #ffffff; /* White for secondary button text */
-  --muted: #f9fafb; /* Light Gray for muted backgrounds */
-  --muted-foreground: #6b7280; /* Medium Gray for muted text */
-  --accent: #ec4899; /* Pink for highlights */
+  --muted: #f1f5f9; /* Light Slate-100 for muted backgrounds */
+  --muted-foreground: #64748b; /* Slate-500 for muted text */
+  --accent: #0d9488; /* Teal-600 for professional highlights */
   --accent-foreground: #ffffff; /* White for accent text */
   --destructive: #be123c; /* Rose-600 for destructive actions */
   --destructive-foreground: #ffffff; /* White for destructive button text */
-  --border: #e5e7eb; /* Gray for borders */
+  --border: #e2e8f0; /* Slate-200 for borders */
   --input: #ffffff; /* White for input fields */
-  --ring: #0891b2; /* Cyan for focus rings */
-  --chart-1: #0891b2; /* Primary chart color */
-  --chart-2: #ec4899; /* Secondary chart color */
-  --chart-3: #4b5563; /* Tertiary chart color */
-  --chart-4: #f9fafb; /* Light background for charts */
-  --chart-5: #be123c; /* Additional color for charts */
+  --ring: #2563eb; /* Royal Blue for focus rings */
+  --chart-1: #2563eb; /* Primary chart color (Blue) */
+  --chart-2: #0d9488; /* Secondary chart color (Teal) */
+  --chart-3: #64748b; /* Tertiary chart color (Slate) */
+  --chart-4: #e2e8f0; /* Light background for charts */
+  --chart-5: #be123c; /* Rose for charts */
   --radius: 0.5rem; /* Rounded corners for cards and buttons */
   --sidebar: #ffffff; /* White for sidebar */
-  --sidebar-foreground: #4b5563; /* Dark Gray for sidebar text */
-  --sidebar-primary: #0891b2; /* Cyan for primary sidebar items */
+  --sidebar-foreground: #1e293b; /* Slate-800 for sidebar text */
+  --sidebar-primary: #2563eb; /* Royal Blue for primary sidebar items */
   --sidebar-primary-foreground: #ffffff; /* White for primary sidebar text */
-  --sidebar-accent: #ec4899; /* Pink for sidebar accents */
-  --sidebar-accent-foreground: #ffffff; /* White for sidebar accent text */
-  --sidebar-border: #e5e7eb; /* Gray for sidebar borders */
-  --sidebar-ring: #0891b2; /* Cyan for sidebar focus rings */
+  --sidebar-accent: #f1f5f9; /* Light Slate-100 for sidebar accents */
+  --sidebar-accent-foreground: #1e293b; /* Slate-800 for sidebar accent text */
+  --sidebar-border: #e2e8f0; /* Slate-200 for sidebar borders */
+  --sidebar-ring: #2563eb; /* Royal Blue for sidebar focus rings */
 }
 
 .dark {
-  --background: #111827; /* Dark background */
-  --foreground: #f9fafb; /* Light text */
-  --card: #1f2937; /* Dark card background */
-  --card-foreground: #f9fafb; /* Light card text */
-  --popover: #1f2937; /* Dark popover background */
-  --popover-foreground: #f9fafb; /* Light popover text */
-  --primary: #06b6d4; /* Lighter cyan for dark mode */
-  --primary-foreground: #111827; /* Dark text on primary */
-  --secondary: #f472b6; /* Lighter pink for dark mode */
-  --secondary-foreground: #111827; /* Dark text on secondary */
-  --muted: #374151; /* Dark muted background */
-  --muted-foreground: #9ca3af; /* Light muted text */
-  --accent: #f472b6; /* Lighter pink for accents */
-  --accent-foreground: #111827; /* Dark text on accent */
+  --background: #0f172a; /* Slate-900 background */
+  --foreground: #f8fafc; /* Slate-50 text */
+  --card: #1e293b; /* Slate-800 card background */
+  --card-foreground: #f8fafc; /* Slate-50 card text */
+  --popover: #1e293b; /* Slate-800 popover background */
+  --popover-foreground: #f8fafc; /* Slate-50 popover text */
+  --primary: #3b82f6; /* Lighter blue for dark mode */
+  --primary-foreground: #0f172a; /* Dark text on primary */
+  --secondary: #475569; /* Slate-600 for dark mode */
+  --secondary-foreground: #f8fafc; /* Light text on secondary */
+  --muted: #334155; /* Slate-700 muted background */
+  --muted-foreground: #94a3b8; /* Slate-400 muted text */
+  --accent: #14b8a6; /* Bright teal for dark accents */
+  --accent-foreground: #0f172a; /* Dark text on accent */
   --destructive: #dc2626; /* Red for destructive actions */
   --destructive-foreground: #ffffff; /* White text on destructive */
-  --border: #374151; /* Dark border */
-  --input: #1f2937; /* Dark input background */
-  --ring: #06b6d4; /* Cyan focus ring */
-  --chart-1: #06b6d4; /* Primary chart color for dark */
-  --chart-2: #f472b6; /* Secondary chart color for dark */
-  --chart-3: #9ca3af; /* Tertiary chart color for dark */
-  --chart-4: #374151; /* Dark background for charts */
-  --chart-5: #dc2626; /* Additional color for charts */
-  --sidebar: #1f2937; /* Dark sidebar */
-  --sidebar-foreground: #f9fafb; /* Light sidebar text */
-  --sidebar-primary: #06b6d4; /* Cyan for primary sidebar items */
-  --sidebar-primary-foreground: #111827; /* Dark text on primary */
-  --sidebar-accent: #f472b6; /* Pink for sidebar accents */
-  --sidebar-accent-foreground: #111827; /* Dark text on accent */
-  --sidebar-border: #374151; /* Dark sidebar border */
-  --sidebar-ring: #06b6d4; /* Cyan sidebar focus ring */
+  --border: #334155; /* Slate-700 border */
+  --input: #1e293b; /* Slate-800 input background */
+  --ring: #3b82f6; /* Blue focus ring */
+  --chart-1: #3b82f6; /* Primary chart color for dark */
+  --chart-2: #14b8a6; /* Secondary chart color for dark */
+  --chart-3: #94a3b8; /* Tertiary chart color for dark */
+  --chart-4: #334155; /* Dark background for charts */
+  --chart-5: #dc2626; /* Red for charts */
+  --sidebar: #1e293b; /* Slate-800 sidebar */
+  --sidebar-foreground: #f8fafc; /* Light sidebar text */
+  --sidebar-primary: #3b82f6; /* Blue for primary sidebar items */
+  --sidebar-primary-foreground: #0f172a; /* Dark text on primary */
+  --sidebar-accent: #334155; /* Slate-700 sidebar accent */
+  --sidebar-accent-foreground: #f8fafc; /* Light text on accent */
+  --sidebar-border: #334155; /* Slate-700 sidebar border */
+  --sidebar-ring: #3b82f6; /* Blue sidebar focus ring */
 }
 
 @theme inline {

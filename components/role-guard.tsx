@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Shield, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
+import { AppLoader } from "@/components/app-loader"
+
 interface RoleGuardProps {
   children: React.ReactNode
   allowedRoles: ("user" | "interviewer")[]
@@ -21,7 +23,7 @@ export function RoleGuard({ children, allowedRoles, fallbackMessage }: RoleGuard
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+        <AppLoader variant="radar" message="Authenticating session and preparing workspace" />
       </div>
     )
   }

@@ -1,5 +1,5 @@
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,16 +16,18 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { mockApplications, type Application } from "@/lib/mock-data"
+import { type Application } from "@/types"
 import { Plus, Filter, Calendar, MapPin, DollarSign, FileText, Edit, Trash2 } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 export default function ApplicationsPage() {
-    const [applications, setApplications] = useState<Application[]>(mockApplications)
-    const [filteredApplications, setFilteredApplications] = useState<Application[]>(mockApplications)
+    const [applications, setApplications] = useState<Application[]>([])
+    const [filteredApplications, setFilteredApplications] = useState<Application[]>([])
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [editingApplication, setEditingApplication] = useState<Application | null>(null)
+    const [loading, setLoading] = useState(true)
 
     const [newApplication, setNewApplication] = useState<Partial<Application>>({
         company: "",
@@ -36,6 +38,21 @@ export default function ApplicationsPage() {
         salary: "",
         notes: "",
     })
+
+    // Fetch applications from API
+    useEffect(() => {
+        fetch("/api/applications")
+            .then((res) => res.json())
+            .then((data) => {
+                setApplications(data)
+                setFilteredApplications(data)
+                setLoading(false)
+            })
+            .catch((err) => {
+                console.error("Failed to fetch applications:", err)
+                setLoading(false)
+            })
+    }, [])
 
     // Filter applications
     const filterApplications = () => {
@@ -57,78 +74,118 @@ export default function ApplicationsPage() {
     }
 
     // Apply filters when dependencies change
-    useState(() => {
+    useEffect(() => {
         filterApplications()
-    })
+    }, [applications, statusFilter, searchQuery])
 
     const handleAddApplication = () => {
         if (newApplication.company && newApplication.role) {
-            const application: Application = {
-                id: Date.now().toString(),
+            const bodyData = {
                 company: newApplication.company,
                 role: newApplication.role,
-                status: newApplication.status as Application["status"],
-                appliedDate: newApplication.appliedDate || new Date().toISOString().split("T")[0],
+                status: newApplication.status || "Applied",
+                appliedDate: newApplication.appliedDate || new Date().toISOString(),
                 location: newApplication.location || "",
-                salary: newApplication.salary,
-                notes: newApplication.notes,
-                deadline: newApplication.deadline,
+                salary: newApplication.salary || "",
+                notes: newApplication.notes || "",
+                deadline: newApplication.deadline || null,
             }
 
-            setApplications([...applications, application])
-            setNewApplication({
-                company: "",
-                role: "",
-                status: "Applied",
-                appliedDate: new Date().toISOString().split("T")[0],
-                location: "",
-                salary: "",
-                notes: "",
+            fetch("/api/applications", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(bodyData),
             })
-            setIsAddDialogOpen(false)
+                .then((res) => res.json())
+                .then((createdApp) => {
+                    setApplications([createdApp, ...applications])
+                    setNewApplication({
+                        company: "",
+                        role: "",
+                        status: "Applied",
+                        appliedDate: new Date().toISOString().split("T")[0],
+                        location: "",
+                        salary: "",
+                        notes: "",
+                    })
+                    setIsAddDialogOpen(false)
+                })
+                .catch((err) => {
+                    console.error("Failed to add application:", err)
+                })
         }
     }
 
     const handleEditApplication = (application: Application) => {
         setEditingApplication(application)
-        setNewApplication(application)
+        // Format date string for the input element
+        const formattedDate = application.appliedDate 
+            ? new Date(application.appliedDate).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0]
+        setNewApplication({
+            ...application,
+            appliedDate: formattedDate,
+        })
         setIsAddDialogOpen(true)
     }
 
     const handleUpdateApplication = () => {
         if (editingApplication && newApplication.company && newApplication.role) {
-            const updatedApplications = applications.map((app) =>
-                app.id === editingApplication.id
-                    ? {
-                        ...app,
-                        company: newApplication.company!,
-                        role: newApplication.role!,
-                        status: newApplication.status as Application["status"],
-                        location: newApplication.location || "",
-                        salary: newApplication.salary,
-                        notes: newApplication.notes,
-                        deadline: newApplication.deadline,
-                    }
-                    : app,
-            )
+            const bodyData = {
+                company: newApplication.company,
+                role: newApplication.role,
+                status: newApplication.status || "Applied",
+                appliedDate: newApplication.appliedDate || new Date().toISOString(),
+                location: newApplication.location || "",
+                salary: newApplication.salary || "",
+                notes: newApplication.notes || "",
+                deadline: newApplication.deadline || null,
+            }
 
-            setApplications(updatedApplications)
-            setEditingApplication(null)
-            setNewApplication({
-                company: "",
-                role: "",
-                status: "Applied",
-                appliedDate: new Date().toISOString().split("T")[0],
-                location: "",
-                salary: "",
-                notes: "",
+            fetch(`/api/applications/${editingApplication.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(bodyData),
             })
-            setIsAddDialogOpen(false)
+                .then((res) => res.json())
+                .then((updatedApp) => {
+                    const updatedApplications = applications.map((app) =>
+                        app.id === editingApplication.id ? updatedApp : app
+                    )
+                    setApplications(updatedApplications)
+                    setEditingApplication(null)
+                    setNewApplication({
+                        company: "",
+                        role: "",
+                        status: "Applied",
+                        appliedDate: new Date().toISOString().split("T")[0],
+                        location: "",
+                        salary: "",
+                        notes: "",
+                    })
+                    setIsAddDialogOpen(false)
+                })
+                .catch((err) => {
+                    console.error("Failed to update application:", err)
+                })
         }
     }
 
     const handleDeleteApplication = (id: string) => {
-        setApplications(applications.filter((app) => app.id !== id))
+        fetch(`/api/applications/${id}`, {
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then(() => {
+                setApplications(applications.filter((app) => app.id !== id))
+            })
+            .catch((err) => {
+                console.error("Failed to delete application:", err)
+            })
     }
 
     const getStatusColor = (status: Application["status"]) => {
@@ -329,7 +386,9 @@ export default function ApplicationsPage() {
 
             {/* Applications List */}
             <div className="space-y-4">
-                {filteredApplications.length > 0 ? (
+                {loading ? (
+                    <AppLoader message="Retrieving your applications tracker" />
+                ) : filteredApplications.length > 0 ? (
                     filteredApplications.map((application) => (
                         <Card key={application.id}>
                             <CardContent className="pt-6">

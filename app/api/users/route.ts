@@ -1,33 +1,53 @@
-import { NextRequest, NextResponse } from 'next/server'
-import clientPromise from '@/lib/mongodb'
-import { User, CreateUserInput } from '@/lib/models'
+import { NextRequest, NextResponse } from "next/server"
+import { UserRepository } from "@/repositories/user.repository"
+import { z } from "zod"
+
+const CreateUserSchema = z.object({
+  name: z.string().optional().nullable(),
+  email: z.string().email("Invalid email address"),
+  image: z.string().optional().nullable(),
+  role: z.string().default("job_seeker"),
+})
 
 export async function GET() {
   try {
-    const client = await clientPromise
-    const db = client.db('jobapp')
-    const users = await db.collection('users').find({}).toArray()
-    return NextResponse.json(users)
+    // In Drizzle, we can query users
+    // Let's implement a clean query to fetch all users
+    const result = await UserRepository.findByEmail("test@example.com") // Just to demonstrate or mock, let's fetch all users from users table
+    // Wait, let's export a generic find all users or query directly
+    const { db } = await import("@/db")
+    const { users } = await import("@/db/schema")
+    const allUsers = await db.select().from(users)
+    
+    const responseData = allUsers.map((user) => ({
+      ...user,
+      _id: user.id, // For backward compatibility
+    }))
+    return NextResponse.json(responseData)
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const client = await clientPromise
-    const db = client.db('jobapp')
-    const data: CreateUserInput = await request.json()
-    
-    const user: Omit<User, '_id'> = {
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date()
+    const body = await request.json()
+    const parsed = CreateUserSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", details: parsed.error.format() }, { status: 400 })
     }
-    
-    const result = await db.collection<User>('users').insertOne(user)
-    return NextResponse.json({ id: result.insertedId }, { status: 201 })
+
+    const user = await UserRepository.create({
+      email: parsed.data.email,
+      name: parsed.data.name || null,
+      image: parsed.data.image || null,
+      role: parsed.data.role,
+    })
+
+    return NextResponse.json(user, { status: 201 })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+    console.error("Create user API error:", error)
+    return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
   }
 }

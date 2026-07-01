@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { mockInterviewerProfiles } from "@/lib/mock-data"
+import { type InterviewerProfile } from "@/types"
 import { Search, Star, Calendar, Users, Github, Linkedin, MapPin, Briefcase } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 const interviewTypeColors = {
   Technical: "bg-blue-100 text-blue-800",
@@ -19,16 +20,31 @@ const interviewTypeColors = {
 }
 
 export default function InterviewerProfilesPage() {
+  const [profiles, setProfiles] = useState<InterviewerProfile[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCompany, setSelectedCompany] = useState<string>("all")
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("all")
   const [selectedInterviewType, setSelectedInterviewType] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
 
-  const companies = Array.from(new Set(mockInterviewerProfiles.map((profile) => profile.company)))
-  const specializations = Array.from(new Set(mockInterviewerProfiles.flatMap((profile) => profile.specializations)))
-  const interviewTypes = Array.from(new Set(mockInterviewerProfiles.flatMap((profile) => profile.interviewTypes)))
+  useEffect(() => {
+    fetch("/api/interviewers")
+      .then((res) => res.json())
+      .then((data) => {
+        setProfiles(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch interviewers:", err)
+        setLoading(false)
+      })
+  }, [])
 
-  const filteredProfiles = mockInterviewerProfiles.filter((profile) => {
+  const companies = Array.from(new Set(profiles.map((profile) => profile.company).filter(Boolean)))
+  const specializations = Array.from(new Set(profiles.flatMap((profile) => profile.specializations).filter(Boolean)))
+  const interviewTypes = Array.from(new Set(profiles.flatMap((profile) => profile.interviewTypes).filter(Boolean)))
+
+  const filteredProfiles = profiles.filter((profile) => {
     const matchesSearch =
       profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       profile.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,14 +131,18 @@ export default function InterviewerProfilesPage() {
         </CardContent>
       </Card>
 
-      {/* Interviewer Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProfiles.map((profile) => (
-          <InterviewerCard key={profile.id} profile={profile} />
-        ))}
-      </div>
+      {/* Profiles Grid */}
+      {loading ? (
+        <AppLoader variant="skeleton" />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProfiles.map((profile) => (
+            <InterviewerCard key={profile.id} profile={profile} />
+          ))}
+        </div>
+      )}
 
-      {filteredProfiles.length === 0 && (
+      {!loading && filteredProfiles.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -135,7 +155,7 @@ export default function InterviewerProfilesPage() {
   )
 }
 
-function InterviewerCard({ profile }: { profile: (typeof mockInterviewerProfiles)[0] }) {
+function InterviewerCard({ profile }: { profile: InterviewerProfile }) {
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
       <CardHeader className="pb-4">

@@ -20,6 +20,7 @@ import {
   Users,
   UserCheck,
   LogOut,
+  ClipboardList,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -28,7 +29,8 @@ import LogoutModal from "./modals/logout-modal"
 const jobSeekerNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Profile", href: "/profile", icon: User },
-  { name: "Applications", href: "/applications", icon: FileText },
+  { name: "My Resumes", href: "/resumes", icon: FileText },
+  { name: "Applications", href: "/applications", icon: ClipboardList },
   { name: "Govt Jobs", href: "/govt-jobs", icon: Building2 },
   { name: "Latest Jobs", href: "/latest-jobs", icon: Briefcase },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
@@ -57,7 +59,7 @@ export function Sidebar() {
   return (
     <>
       {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-4 left-4 z-50 no-print">
         <Button
           variant="outline"
           size="icon"
@@ -71,7 +73,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 bg-sidebar border-r border-sidebar-border transform transition-all duration-300 ease-in-out lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 bg-sidebar border-r border-sidebar-border transform transition-all duration-300 ease-in-out lg:translate-x-0 no-print",
           isCollapsed ? "w-[72px]" : "w-64",
           isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
         )}

@@ -8,36 +8,89 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { mockInterviewerProfiles } from "@/lib/mock-data"
+import { useState, useEffect } from "react"
 import { Star, Github, Linkedin, MapPin, Edit, Save, X } from "lucide-react"
-import { useState } from "react"
-
+import { AppLoader } from "@/components/app-loader"
 export default function InterviewerProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
-
-  // For demo purposes, using the first interviewer profile
-  const profile = mockInterviewerProfiles[0]
-
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const [editedProfile, setEditedProfile] = useState({
-    bio: profile.bio,
-    specializations: profile.specializations.join(", "),
-    linkedIn: profile.linkedIn || "",
-    github: profile.github || "",
+    bio: "",
+    specializations: "",
+    linkedIn: "",
+    github: "",
   })
 
+  useEffect(() => {
+    fetch("/api/interviewer-profile")
+      .then((res) => res.json())
+      .then((data) => {
+        setProfile(data)
+        setEditedProfile({
+          bio: data.bio || "",
+          specializations: data.specializations ? data.specializations.join(", ") : "",
+          linkedIn: data.linkedIn || "",
+          github: data.github || "",
+        })
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to load profile:", err)
+        setLoading(false)
+      })
+  }, [])
+
   const handleSave = () => {
-    // In a real app, this would save to the backend
-    setIsEditing(false)
+    const specs = editedProfile.specializations
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    fetch("/api/interviewer-profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: profile.name,
+        bio: editedProfile.bio,
+        specializations: specs,
+        linkedIn: editedProfile.linkedIn,
+        github: editedProfile.github,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setProfile(data)
+        setIsEditing(false)
+      })
+      .catch((err) => {
+        console.error("Failed to save profile:", err)
+      })
   }
 
   const handleCancel = () => {
-    setEditedProfile({
-      bio: profile.bio,
-      specializations: profile.specializations.join(", "),
-      linkedIn: profile.linkedIn || "",
-      github: profile.github || "",
-    })
+    if (profile) {
+      setEditedProfile({
+        bio: profile.bio || "",
+        specializations: profile.specializations ? profile.specializations.join(", ") : "",
+        linkedIn: profile.linkedIn || "",
+        github: profile.github || "",
+      })
+    }
     setIsEditing(false)
+  }
+
+  if (loading) {
+    return (
+      <RoleGuard
+        allowedRoles={["interviewer"]}
+        fallbackMessage="This page is only accessible to interviewer accounts to manage their profile."
+      >
+        <AppLoader message="Retrieving your interviewer settings & profile details" />
+      </RoleGuard>
+    )
   }
 
   return (
@@ -72,7 +125,7 @@ export default function InterviewerProfilePage() {
                   <AvatarFallback className="text-2xl">
                     {profile.name
                       .split(" ")
-                      .map((n) => n[0])
+                      .map((n: string) => n[0])
                       .join("")}
                   </AvatarFallback>
                 </Avatar>
@@ -181,7 +234,7 @@ export default function InterviewerProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {profile.interviewTypes.map((type) => (
+                  {profile.interviewTypes.map((type: string) => (
                     <Badge key={type} variant="secondary" className="px-3 py-1">
                       {type}
                     </Badge>
@@ -205,7 +258,7 @@ export default function InterviewerProfilePage() {
                   />
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {profile.specializations.map((spec) => (
+                    {profile.specializations.map((spec: string) => (
                       <Badge key={spec} variant="outline" className="px-3 py-1">
                         {spec}
                       </Badge>
@@ -226,7 +279,7 @@ export default function InterviewerProfilePage() {
                   <div>
                     <h4 className="font-medium mb-2">Available Days</h4>
                     <div className="flex flex-wrap gap-2">
-                      {profile.availability.days.map((day) => (
+                      {profile.availability.days.map((day: string) => (
                         <Badge key={day} variant="secondary" className="px-3 py-1">
                           {day}
                         </Badge>
@@ -236,7 +289,7 @@ export default function InterviewerProfilePage() {
                   <div>
                     <h4 className="font-medium mb-2">Time Slots</h4>
                     <div className="flex flex-wrap gap-2">
-                      {profile.availability.timeSlots.map((slot) => (
+                      {profile.availability.timeSlots.map((slot: string) => (
                         <Badge key={slot} variant="outline" className="px-3 py-1">
                           {slot}
                         </Badge>

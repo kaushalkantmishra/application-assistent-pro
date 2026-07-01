@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import clientPromise from '@/lib/mongodb'
-import { Chat } from '@/lib/models'
+import { NextRequest, NextResponse } from "next/server"
+import { ChatRepository } from "@/repositories/chat.repository"
 
 const jobResponses = {
   resume: "Focus on quantifiable achievements, use action verbs, and tailor your resume to each job. Keep it to 1-2 pages and include relevant keywords from the job description.",
@@ -43,56 +42,57 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
-    // Try DeepSeek API first, fallback to local responses
-    if (process.env.DEEPSEEK_API_KEY) {
+    let response = ""
+
+    // Try Gemini API first
+    if (process.env.GEMINI_API_KEY) {
       try {
-        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
+        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: [{
-              role: 'user',
-              content: message
+            contents: [{
+              parts: [{
+                text: message
+              }]
             }],
-            max_tokens: 300,
+            generationConfig: {
+              maxOutputTokens: 300,
+            }
           }),
         })
 
-        if (response.ok) {
-          const data = await response.json()
-          const aiResponse = data.choices[0]?.message?.content
+        if (apiResponse.ok) {
+          const data = await apiResponse.json()
+          const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
           if (aiResponse) {
-            return NextResponse.json({ response: aiResponse })
+            response = aiResponse
           }
+        } else {
+          console.log("Gemini API returned status:", apiResponse.status)
         }
       } catch (error) {
-        console.log('DeepSeek API unavailable, using fallback')
+        console.log("Gemini API unavailable, using fallback")
       }
     }
 
-    // Fallback to local responses
-    const response = getJobAdvice(message)
+    if (!response) {
+      // Fallback to local responses
+      response = getJobAdvice(message)
+    }
     
-    // Store chat message in MongoDB
+    // Store chat message in PostgreSQL using ChatRepository
     try {
-      const client = await clientPromise
-      const db = client.db('jobapp')
-      
-      const chat: Omit<Chat, '_id'> = {
+      await ChatRepository.create({
         sessionId: 'anonymous',
         message,
         response,
         category: getChatCategory(message),
-        timestamp: new Date()
-      }
-      
-      await db.collection<Chat>('chats').insertOne(chat)
+      })
     } catch (dbError) {
-      console.log('Failed to store chat:', dbError)
+      console.log('Failed to store chat in database:', dbError)
     }
     
     return NextResponse.json({ response })

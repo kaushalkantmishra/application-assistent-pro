@@ -1,25 +1,42 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { mockGovtJobs, type GovtJob } from "@/lib/mock-data"
+import { type GovtJob } from "@/types"
 import { Search, MapPin, Calendar, Users, ExternalLink, Building2 } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 export default function GovtJobsPage() {
-  const [jobs] = useState<GovtJob[]>(mockGovtJobs)
-  const [filteredJobs, setFilteredJobs] = useState<GovtJob[]>(mockGovtJobs)
+  const [jobs, setJobs] = useState<GovtJob[]>([])
+  const [filteredJobs, setFilteredJobs] = useState<GovtJob[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [locationFilter, setLocationFilter] = useState("all")
+  const [loading, setLoading] = useState(true)
+
+  // Fetch jobs from API
+  useEffect(() => {
+    fetch("/api/govt-jobs")
+      .then((res) => res.json())
+      .then((data) => {
+        setJobs(data)
+        setFilteredJobs(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch govt jobs:", err)
+        setLoading(false)
+      })
+  }, [])
 
   // Get unique departments and locations for filters
-  const departments = Array.from(new Set(jobs.map((job) => job.department)))
-  const locations = Array.from(new Set(jobs.map((job) => job.location)))
+  const departments = Array.from(new Set(jobs.map((job) => job.department).filter(Boolean)))
+  const locations = Array.from(new Set(jobs.map((job) => job.location).filter(Boolean)))
 
   // Filter jobs
   const filterJobs = () => {
@@ -46,9 +63,9 @@ export default function GovtJobsPage() {
   }
 
   // Apply filters when dependencies change
-  useState(() => {
+  useEffect(() => {
     filterJobs()
-  })
+  }, [jobs, searchQuery, departmentFilter, locationFilter])
 
   const isDeadlineNear = (lastDate: string) => {
     const deadline = new Date(lastDate)
@@ -131,7 +148,9 @@ export default function GovtJobsPage() {
 
       {/* Jobs List */}
       <div className="space-y-4">
-        {filteredJobs.length > 0 ? (
+        {loading ? (
+          <AppLoader variant="skeleton" />
+        ) : filteredJobs.length > 0 ? (
           filteredJobs.map((job) => (
             <Card key={job.id} className="hover:shadow-md transition-shadow">
               <CardHeader>

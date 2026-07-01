@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
+import { AppLoader } from "@/components/app-loader"
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -21,7 +23,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+        <AppLoader variant="radar" message="Authenticating session and preparing workspace" />
       </div>
     )
   }

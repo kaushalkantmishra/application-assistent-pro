@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockReadingMaterials } from "@/lib/mock-data"
+import { type ReadingMaterial } from "@/types"
 import { Search, ExternalLink, Clock, Star, BookOpen, Video, Award, FileText, Code, Users } from "lucide-react"
+import { AppLoader } from "@/components/app-loader"
 
 const categoryIcons = {
   DSA: Code,
@@ -36,16 +37,31 @@ const difficultyColors = {
 }
 
 export default function ReadingMaterialsPage() {
+  const [materials, setMaterials] = useState<ReadingMaterial[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [selectedType, setSelectedType] = useState<string>("all")
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all")
+  const [loading, setLoading] = useState(true)
 
-  const categories = Array.from(new Set(mockReadingMaterials.map((material) => material.category)))
-  const types = Array.from(new Set(mockReadingMaterials.map((material) => material.type)))
-  const difficulties = Array.from(new Set(mockReadingMaterials.map((material) => material.difficulty)))
+  useEffect(() => {
+    fetch("/api/reading-materials")
+      .then((res) => res.json())
+      .then((data) => {
+        setMaterials(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error("Failed to fetch reading materials:", err)
+        setLoading(false)
+      })
+  }, [])
 
-  const filteredMaterials = mockReadingMaterials.filter((material) => {
+  const categories = Array.from(new Set(materials.map((material) => material.category).filter(Boolean)))
+  const types = Array.from(new Set(materials.map((material) => material.type).filter(Boolean)))
+  const difficulties = Array.from(new Set(materials.map((material) => material.difficulty).filter(Boolean)))
+
+  const filteredMaterials = materials.filter((material) => {
     const matchesSearch =
       material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       material.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -61,7 +77,7 @@ export default function ReadingMaterialsPage() {
       acc[category] = filteredMaterials.filter((material) => material.category === category)
       return acc
     },
-    {} as Record<string, typeof mockReadingMaterials>,
+    {} as Record<string, ReadingMaterial[]>,
   )
 
   return (
@@ -71,7 +87,7 @@ export default function ReadingMaterialsPage() {
         description="Curated resources to help you prepare for interviews and advance your career"
       >
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-cyan-100 text-cyan-800">
+          <Badge variant="secondary">
             {filteredMaterials.length} Resources
           </Badge>
         </div>
@@ -144,41 +160,47 @@ export default function ReadingMaterialsPage() {
       <Tabs defaultValue="all" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 bg-white">
           <TabsTrigger value="all" className="text-xs transition-colors 
-        hover:text-cyan-600 
-        data-[state=active]:text-cyan-600 
-        data-[state=active]:bg-cyan-100 
+        hover:text-primary 
+        data-[state=active]:text-primary 
+        data-[state=active]:bg-primary/10 
         rounded-md mb-1">All</TabsTrigger>
           {categories.map((category) => (
             <TabsTrigger
               key={category}
               value={category}
-              className="text-xs data-[state=active]:bg-cyan-100 data-[state=active]:text-cyan-600"
+              className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
             >
               {category}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value="all" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMaterials.map((material) => (
-              <MaterialCard key={material.id} material={material} />
-            ))}
-          </div>
-        </TabsContent>
+        {loading ? (
+          <AppLoader variant="skeleton" />
+        ) : (
+          <>
+            <TabsContent value="all" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredMaterials.map((material) => (
+                  <MaterialCard key={material.id} material={material} />
+                ))}
+              </div>
+            </TabsContent>
 
-        {categories.map((category) => (
-          <TabsContent key={category} value={category} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {materialsByCategory[category]?.map((material) => (
-                <MaterialCard key={material.id} material={material} />
-              ))}
-            </div>
-          </TabsContent>
-        ))}
+            {categories.map((category) => (
+              <TabsContent key={category} value={category} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {materialsByCategory[category]?.map((material) => (
+                    <MaterialCard key={material.id} material={material} />
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
+          </>
+        )}
       </Tabs>
 
-      {filteredMaterials.length === 0 && (
+      {!loading && filteredMaterials.length === 0 && (
         <Card className="text-center py-12">
           <CardContent>
             <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -191,9 +213,9 @@ export default function ReadingMaterialsPage() {
   )
 }
 
-function MaterialCard({ material }: { material: (typeof mockReadingMaterials)[0] }) {
-  const CategoryIcon = categoryIcons[material.category]
-  const TypeIcon = typeIcons[material.type]
+function MaterialCard({ material }: { material: ReadingMaterial }) {
+  const CategoryIcon = categoryIcons[material.category as keyof typeof categoryIcons] || Code
+  const TypeIcon = typeIcons[material.type as keyof typeof typeIcons] || FileText
 
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">

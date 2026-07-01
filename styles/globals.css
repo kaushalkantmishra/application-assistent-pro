@@ -123,3 +123,49 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Hide all UI panels */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset document flow and backgrounds */
+  html, body {
+    background: white !important;
+    color: black !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Remove flex height restrictions from parents so the whole resume prints */
+  .h-screen, .flex-1, [role="group"], [role="tabpanel"], .PanelGroup, .Panel {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Force the sheet container to occupy the absolute top-left of print canvas */
+  #resume-print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    transform: none !important;
+    background: white !important;
+  }
+}

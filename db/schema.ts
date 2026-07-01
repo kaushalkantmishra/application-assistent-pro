@@ -303,3 +303,30 @@ export const recentSearches = pgTable("recent_searches", {
   query: text("query").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 })
+
+// ----------------------------------------------------
+// RESUMES SCHEMA
+// ----------------------------------------------------
+
+export const resumes = pgTable(
+  "resumes",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    templateId: text("template_id").default("modern").notNull(),
+    themeId: text("theme_id").default("default").notNull(),
+    resumeJson: jsonb("resume_json").notNull(),
+    status: text("status").default("draft").notNull(),
+    isFavorite: boolean("is_favorite").default(false).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { mode: "date" }),
+  },
+  (table) => ({
+    userIdIdx: index("resumes_user_id_idx").on(table.userId),
+    deletedAtIdx: index("resumes_deleted_at_idx").on(table.deletedAt),
+  })
+)

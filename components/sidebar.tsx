@@ -20,6 +20,7 @@ import {
   Users,
   UserCheck,
   LogOut,
+  ClipboardList,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -28,7 +29,8 @@ import LogoutModal from "./modals/logout-modal"
 const jobSeekerNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Profile", href: "/profile", icon: User },
-  { name: "Applications", href: "/applications", icon: FileText },
+  { name: "My Resumes", href: "/resumes", icon: FileText },
+  { name: "Applications", href: "/applications", icon: ClipboardList },
   { name: "Govt Jobs", href: "/govt-jobs", icon: Building2 },
   { name: "Latest Jobs", href: "/latest-jobs", icon: Briefcase },
   { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },

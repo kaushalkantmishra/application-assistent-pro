@@ -321,6 +321,7 @@ export const resumes = pgTable(
     resumeJson: jsonb("resume_json").notNull(),
     status: text("status").default("draft").notNull(),
     isFavorite: boolean("is_favorite").default(false).notNull(),
+    isDefault: boolean("is_default").default(false).notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { mode: "date" }),
@@ -328,5 +329,106 @@ export const resumes = pgTable(
   (table) => ({
     userIdIdx: index("resumes_user_id_idx").on(table.userId),
     deletedAtIdx: index("resumes_deleted_at_idx").on(table.deletedAt),
+  })
+)
+
+// ----------------------------------------------------
+// AI OPTIMIZER & COVER LETTER MODULE SCHEMA
+// ----------------------------------------------------
+
+export const tblJobDescriptions = pgTable(
+  "tbl_job_descriptions",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    companyName: text("company_name"),
+    jobRole: text("job_role"),
+    jobDescriptionText: text("job_description_text").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("job_desc_user_id_idx").on(table.userId),
+  })
+)
+
+export const tblAiResumeAnalysis = pgTable(
+  "tbl_ai_resume_analysis",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    resumeId: text("resume_id")
+      .notNull()
+      .references(() => resumes.id, { onDelete: "cascade" }),
+    jobDescriptionId: text("job_description_id")
+      .notNull()
+      .references(() => tblJobDescriptions.id, { onDelete: "cascade" }),
+    overallMatchScore: integer("overall_match_score").notNull(),
+    technicalMatchPercent: integer("technical_match_percent").notNull(),
+    experienceMatchPercent: integer("experience_match_percent").notNull(),
+    skillsMatchPercent: integer("skills_match_percent").notNull(),
+    educationMatchPercent: integer("education_match_percent").notNull(),
+    keywordMatchPercent: integer("keyword_match_percent").notNull(),
+    atsScore: integer("ats_score").notNull(),
+    analysisJson: jsonb("analysis_json").notNull(), // missing skills, keywords, action verbs, etc.
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("analysis_user_id_idx").on(table.userId),
+    resumeIdIdx: index("analysis_resume_id_idx").on(table.resumeId),
+  })
+)
+
+export const tblCoverLetters = pgTable(
+  "tbl_cover_letters",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    resumeId: text("resume_id")
+      .notNull()
+      .references(() => resumes.id, { onDelete: "cascade" }),
+    jobDescriptionId: text("job_description_id")
+      .references(() => tblJobDescriptions.id, { onDelete: "set null" }),
+    companyName: text("company_name"),
+    hiringManager: text("hiring_manager"),
+    jobRole: text("job_role"),
+    tone: text("tone"), // "professional" | "friendly" | "formal" | "confident"
+    length: text("length"), // "short" | "medium" | "long"
+    coverLetterText: text("cover_letter_text").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("cover_letters_user_id_idx").on(table.userId),
+    resumeIdIdx: index("cover_letters_resume_id_idx").on(table.resumeId),
+  })
+)
+
+export const tblAiHistory = pgTable(
+  "tbl_ai_history",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    resumeId: text("resume_id")
+      .notNull()
+      .references(() => resumes.id, { onDelete: "cascade" }),
+    jobDescriptionId: text("job_description_id")
+      .references(() => tblJobDescriptions.id, { onDelete: "set null" }),
+    originalResumeJson: jsonb("original_resume_json").notNull(),
+    optimizedResumeJson: jsonb("optimized_resume_json").notNull(),
+    jobTitle: text("job_title"),
+    companyName: text("company_name"),
+    createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("ai_history_user_id_idx").on(table.userId),
+    resumeIdIdx: index("ai_history_resume_id_idx").on(table.resumeId),
   })
 )

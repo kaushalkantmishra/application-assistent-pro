@@ -48,8 +48,10 @@ interface Resume {
   templateId: string
   themeId: string
   isFavorite: boolean
+  isDefault: boolean
   createdAt: string
   updatedAt: string
+  resumeJson: Record<string, any>
 }
 
 const TEMPLATE_OPTIONS = [
@@ -59,6 +61,223 @@ const TEMPLATE_OPTIONS = [
   { id: "minimal", name: "Minimal Template", description: "Understated classic serif typographic layout.", bg: "from-zinc-50 to-zinc-100" },
   { id: "classic", name: "Classic Developer", description: "ATS-friendly classic single-column serif layout with bold headings and right-aligned dates, identical to the Jake's Resume standard.", bg: "from-amber-50/50 to-orange-50/50" },
 ]
+
+const renderTemplatePreview = (templateId: string, resumeJson: Record<string, any>) => {
+  const personalInfo = resumeJson?.personalInfo || {}
+  const fullName = personalInfo.fullName || "Your Name"
+  const email = personalInfo.email || "email@example.com"
+  const phone = personalInfo.phone || "123-456-7890"
+  
+  const summaryText = resumeJson?.summary?.text || ""
+  const isSummaryVisible = resumeJson?.summary?.visible !== false && summaryText
+  
+  const experienceList = resumeJson?.experience?.items || []
+  const educationList = resumeJson?.education?.items || []
+  const skillsList = resumeJson?.technicalSkills?.items || []
+  
+  const firstExp = experienceList[0] || {}
+  
+  switch (templateId) {
+    case "classic":
+      return (
+        <div className="w-full h-full bg-white p-3 flex flex-col gap-1 select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
+          {/* Header */}
+          <div className="text-center space-y-0.5">
+            <div className="font-bold text-[8px] tracking-tight uppercase text-slate-950">{fullName}</div>
+            <div className="flex justify-center gap-1.5 text-[4px] text-slate-500">
+              {email && <span>{email}</span>}
+              {phone && <span>• {phone}</span>}
+            </div>
+          </div>
+          <hr className="border-t border-slate-300 my-0.5" />
+          
+          {/* Summary */}
+          {isSummaryVisible && (
+            <div className="space-y-0.5">
+              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Professional Summary</div>
+              <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
+            </div>
+          )}
+          
+          {/* Experience */}
+          {experienceList.length > 0 && (
+            <div className="space-y-0.5">
+              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Professional Experience</div>
+              {experienceList.slice(0, 1).map((exp: any, i: number) => (
+                <div key={i} className="space-y-0.5">
+                  <div className="flex justify-between font-bold text-[4.5px] text-slate-850">
+                    <span>{exp.role || "Job Role"} at {exp.company || "Company"}</span>
+                    <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration || "Date"}</span>
+                  </div>
+                  <p className="text-[4px] text-slate-650 line-clamp-2 leading-snug">{exp.description || "Developed software solutions"}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Education */}
+          {educationList.length > 0 && (
+            <div className="space-y-0.5">
+              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Education</div>
+              {educationList.slice(0, 1).map((edu: any, i: number) => (
+                <div key={i} className="flex justify-between items-center text-[4.5px]">
+                  <span className="font-bold text-slate-800">{edu.degree || "Degree"} — {edu.institution || "School"}</span>
+                  <span className="text-[3.5px] text-slate-400">{edu.year || "Year"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+
+    case "professional":
+      return (
+        <div className="w-full h-full bg-white flex select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
+          {/* Left Column (Sidebar) */}
+          <div className="w-[32%] bg-slate-50 p-2.5 flex flex-col gap-2 border-r border-slate-100 h-full">
+            <div className="w-8 h-8 rounded-full bg-indigo-100/80 mx-auto flex items-center justify-center font-bold text-[8px] text-indigo-700">
+              {fullName.charAt(0) || "U"}
+            </div>
+            
+            <div className="space-y-0.5 text-center">
+              <div className="font-bold text-[4.5px] text-slate-800 truncate">{fullName}</div>
+              <div className="text-[3.5px] text-slate-500 truncate">{email}</div>
+            </div>
+
+            {skillsList.length > 0 && (
+              <div className="space-y-1">
+                <div className="font-bold text-[4.5px] text-slate-900 border-b pb-0.5 uppercase tracking-wider">Skills</div>
+                <div className="flex flex-wrap gap-0.5">
+                  {skillsList.slice(0, 4).map((skill: any, i: number) => (
+                    <span key={i} className="bg-slate-200 text-slate-700 px-1 py-0.5 rounded-[2px] text-[3.5px]">
+                      {skill.skills?.split(",")[0] || skill.category}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Right Column (Content) */}
+          <div className="w-[68%] p-2.5 flex flex-col gap-2.5">
+            {isSummaryVisible && (
+              <div className="space-y-0.5">
+                <div className="font-bold text-[5px] text-indigo-600 uppercase tracking-wide border-b pb-0.5">Profile Summary</div>
+                <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
+              </div>
+            )}
+            
+            {experienceList.length > 0 && (
+              <div className="space-y-1">
+                <div className="font-bold text-[5px] text-indigo-600 uppercase tracking-wide border-b pb-0.5">Experience</div>
+                {experienceList.slice(0, 1).map((exp: any, i: number) => (
+                  <div key={i} className="space-y-0.5">
+                    <div className="flex justify-between font-bold text-[4.5px] text-slate-855">
+                      <span>{exp.role}</span>
+                      <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration}</span>
+                    </div>
+                    <div className="text-[4px] text-slate-500 font-semibold">{exp.company}</div>
+                    <p className="text-[4px] text-slate-650 line-clamp-2 leading-snug">{exp.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+
+    case "developer":
+      return (
+        <div className="w-full h-full bg-slate-950 p-3 flex flex-col gap-1 select-none text-[4.5px] leading-[1.2] text-emerald-400 font-mono shadow-inner">
+          <div className="flex justify-between items-center text-slate-600 border-b border-slate-900 pb-0.5 mb-0.5 text-[3.5px]">
+            <span>bash</span><span>● ✖ 💻</span>
+          </div>
+          <div>
+            <span className="text-blue-400">~/resume $</span> cat info.json
+          </div>
+          <div className="text-slate-300 pl-2 whitespace-pre-wrap">
+            {`{\n  "name": "${fullName}",\n  "target": "${firstExp.role || "Developer"}"\n}`}
+          </div>
+          <div className="mt-1">
+            <span className="text-blue-400">~/resume $</span> cat skills.list
+          </div>
+          <div className="text-slate-400 pl-2 line-clamp-2">
+            {skillsList.map((s: any) => s.skills).join(", ") || "React, Node.js, Express, MongoDB"}
+          </div>
+        </div>
+      )
+
+    case "minimal":
+      return (
+        <div className="w-full h-full bg-white p-3 flex flex-col gap-1.5 select-none text-[5px] leading-[1.3] text-zinc-800 font-serif shadow-inner">
+          <div className="text-center my-0.5">
+            <div className="font-bold text-[8.5px] italic text-zinc-955">{fullName}</div>
+            <div className="text-[4px] text-zinc-500 italic">{firstExp.role || "Professional Candidate"}</div>
+          </div>
+          
+          {isSummaryVisible && (
+            <div className="space-y-0.5 text-center">
+              <p className="text-[4px] leading-relaxed text-zinc-655 line-clamp-2 italic px-2">"{summaryText}"</p>
+            </div>
+          )}
+          
+          <hr className="border-t border-zinc-200" />
+          
+          {experienceList.length > 0 && (
+            <div className="space-y-0.5">
+              <div className="font-semibold text-[4.5px] uppercase tracking-wider text-zinc-500 text-center">Experience</div>
+              {experienceList.slice(0, 1).map((exp: any, i: number) => (
+                <div key={i} className="space-y-0.5">
+                  <div className="flex justify-between font-semibold text-[4.5px] text-zinc-900">
+                    <span>{exp.role} at {exp.company}</span>
+                    <span className="text-[3.5px] text-zinc-400 font-normal">{exp.duration}</span>
+                  </div>
+                  <p className="text-[4px] text-zinc-655 line-clamp-2 leading-relaxed">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+
+    case "modern":
+    default:
+      return (
+        <div className="w-full h-full bg-white p-3 flex flex-col gap-1.5 select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
+          {/* Header */}
+          <div className="space-y-0.5">
+            <div className="font-bold text-[8.5px] text-indigo-600 tracking-tight">{fullName}</div>
+            <div className="text-[4px] text-slate-450 font-semibold">{firstExp.role || "Software Engineer"}</div>
+            <div className="h-0.5 bg-indigo-500 rounded w-full mt-0.5" />
+          </div>
+          
+          {/* Summary */}
+          {isSummaryVisible && (
+            <div className="space-y-0.5">
+              <div className="font-bold text-[4.5px] text-indigo-500 uppercase tracking-wide">Summary</div>
+              <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
+            </div>
+          )}
+          
+          {/* Experience */}
+          {experienceList.length > 0 && (
+            <div className="space-y-0.5">
+              <div className="font-bold text-[4.5px] text-indigo-500 uppercase tracking-wide">Experience</div>
+              {experienceList.slice(0, 1).map((exp: any, i: number) => (
+                <div key={i} className="space-y-0.5">
+                  <div className="flex justify-between font-bold text-[4.5px] text-slate-850">
+                    <span>{exp.role} at {exp.company}</span>
+                    <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration}</span>
+                  </div>
+                  <p className="text-[4px] text-slate-655 line-clamp-2 leading-snug">{exp.description}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+  }
+}
 
 export default function ResumeDashboardPage() {
   const router = useRouter()
@@ -139,6 +358,43 @@ export default function ResumeDashboardPage() {
     } catch (error) {
       console.error(error)
       toast.error("Error toggling favorite")
+    }
+  }
+
+  // Handle default toggle
+  const handleToggleDefault = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const resume = resumes.find((r) => r.id === id)
+      if (!resume) return
+
+      const isMakingDefault = !resume.isDefault
+      if (isMakingDefault) {
+        const defaultCount = resumes.filter((r) => r.isDefault).length
+        if (defaultCount >= 5) {
+          toast.error("You can set a maximum of 5 resumes as default.")
+          return
+        }
+      }
+
+      const res = await fetch(`/api/resumes/${id}/default`, { method: "PUT" })
+      if (res.ok) {
+        setResumes((prev) =>
+          prev.map((r) => (r.id === id ? { ...r, isDefault: !r.isDefault } : r))
+        )
+        toast.success(isMakingDefault ? "Set as default resume" : "Removed default status")
+      } else {
+        const errText = await res.text()
+        try {
+          const parsed = JSON.parse(errText)
+          toast.error(parsed.error || "Failed to update default status")
+        } catch {
+          toast.error("Failed to update default status")
+        }
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Error toggling default status")
     }
   }
 
@@ -330,7 +586,7 @@ export default function ResumeDashboardPage() {
 
         {/* Dashboard Content */}
         {loading ? (
-          <AppLoader variant="skeleton" />
+          <AppLoader message="Retrieving your saved resumes" />
         ) : resumes.length === 0 ? (
           <Card className="text-center py-12 bg-muted/20 border-dashed">
             <CardHeader>
@@ -358,10 +614,16 @@ export default function ResumeDashboardPage() {
                   <div
                     onClick={() => router.push(`/resumes/${resume.id}/edit`)}
                     className="h-40 w-full bg-gradient-to-br from-blue-500/5 to-indigo-500/10 flex items-center justify-center border-b cursor-pointer group-hover:bg-primary/5 transition-colors relative"
-                  >
-                    <div className="text-slate-400 opacity-60 flex flex-col items-center">
-                      <FileText className="h-12 w-12 text-primary/60 group-hover:scale-105 transition-transform duration-300 mb-1" />
-                      <span className="text-xs uppercase font-semibold tracking-wider text-slate-500">{resume.templateId} template</span>
+                  >                    {/* Default resume indicator */}
+                    {resume.isDefault && (
+                      <span className="absolute top-3 left-3 bg-indigo-600 text-white text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 z-10 animate-pulse">
+                        <Sparkles className="h-2.5 w-2.5" /> Default
+                      </span>
+                    )}
+
+                    {/* Template placeholder preview visual */}
+                    <div className="w-full h-full group-hover:scale-[1.02] transition-transform duration-300">
+                      {renderTemplatePreview(resume.templateId, resume.resumeJson)}
                     </div>
 
                     {/* Favorite toggle overlay */}
@@ -395,12 +657,16 @@ export default function ResumeDashboardPage() {
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[140px]">
+                      <DropdownMenuContent align="end" className="w-[160px]">
                         <DropdownMenuItem onClick={() => openRenameDialog(resume.id, resume.title)} className="cursor-pointer">
                           <Edit className="h-4 w-4 mr-2" /> Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDuplicate(resume.id)} className="cursor-pointer">
                           <Copy className="h-4 w-4 mr-2" /> Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => handleToggleDefault(resume.id, e)} className="cursor-pointer text-indigo-700 font-semibold focus:text-indigo-850">
+                          <Sparkles className={`h-4 w-4 mr-2 ${resume.isDefault ? "fill-indigo-600 text-indigo-600" : "text-indigo-550"}`} />
+                          {resume.isDefault ? "Remove Default" : "Mark as Default"}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => openDeleteDialog(resume.id)} className="text-destructive cursor-pointer">
@@ -423,8 +689,13 @@ export default function ResumeDashboardPage() {
                     <Star className={`h-5 w-5 ${resume.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`} />
                   </button>
                   <div className="min-w-0">
-                    <h4 className="font-bold text-slate-800 truncate cursor-pointer hover:underline" onClick={() => router.push(`/resumes/${resume.id}/edit`)}>
+                    <h4 className="font-bold text-slate-800 truncate cursor-pointer hover:underline flex items-center gap-2" onClick={() => router.push(`/resumes/${resume.id}/edit`)}>
                       {resume.title}
+                      {resume.isDefault && (
+                        <Badge className="bg-indigo-600 hover:bg-indigo-600 text-[9px] h-4 font-bold uppercase py-0 px-1 shadow-sm flex items-center gap-0.5 animate-pulse text-white">
+                          <Sparkles className="h-2.5 w-2.5" /> Default
+                        </Badge>
+                      )}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3">
                       <span className="capitalize">Template: {resume.templateId}</span>
@@ -444,12 +715,16 @@ export default function ResumeDashboardPage() {
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-[160px]">
                       <DropdownMenuItem onClick={() => openRenameDialog(resume.id, resume.title)} className="cursor-pointer">
                         <Edit className="h-4 w-4 mr-2" /> Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDuplicate(resume.id)} className="cursor-pointer">
                         <Copy className="h-4 w-4 mr-2" /> Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => handleToggleDefault(resume.id, e)} className="cursor-pointer text-indigo-700 font-semibold focus:text-indigo-850">
+                        <Sparkles className={`h-4 w-4 mr-2 ${resume.isDefault ? "fill-indigo-600 text-indigo-600" : "text-indigo-550"}`} />
+                        {resume.isDefault ? "Remove Default" : "Mark as Default"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => openDeleteDialog(resume.id)} className="text-destructive cursor-pointer">

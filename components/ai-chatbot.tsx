@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { MessageCircle, X, Send, Bot } from "lucide-react"
+import { MessageCircle, X, Send, Bot, Maximize2, Minimize2 } from "lucide-react"
 
 interface Message {
   id: string
@@ -26,6 +26,38 @@ export function AIChatbot() {
   const [inputValue, setInputValue] = useState("")
   const [showWelcome, setShowWelcome] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Resizing state
+  const [width, setWidth] = useState(360)
+  const [height, setHeight] = useState(480)
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const startWidth = width
+    const startHeight = height
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = startX - moveEvent.clientX
+      const deltaY = startY - moveEvent.clientY
+      
+      // Limit bounds to avoid breaking layouts
+      const newWidth = Math.max(300, Math.min(window.innerWidth - 40, startWidth + deltaX))
+      const newHeight = Math.max(350, Math.min(window.innerHeight - 120, startHeight + deltaY))
+      
+      setWidth(newWidth)
+      setHeight(newHeight)
+    }
+
+    const handleMouseUp = () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mouseup", handleMouseUp)
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mouseup", handleMouseUp)
+  }
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
@@ -146,13 +178,44 @@ export function AIChatbot() {
 
       {/* Chat Window (responsive) */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-40 w-[95vw] max-w-xs sm:max-w-sm md:w-80 h-[60vh] md:h-96 animate-in slide-in-from-bottom-4 fade-in zoom-in-95 duration-300">
-          <Card className="h-full flex flex-col shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
+        <div
+          style={{ width: `${width}px`, height: `${height}px` }}
+          className="fixed bottom-24 right-6 z-40 max-w-[95vw] max-h-[85vh] animate-in slide-in-from-bottom-4 fade-in zoom-in-95 duration-300"
+        >
+          <Card className="h-full flex flex-col shadow-xl relative overflow-hidden">
+            {/* Drag to resize handle in top-left corner */}
+            <div
+              onMouseDown={handleMouseDown}
+              className="absolute top-0 left-0 w-5 h-5 cursor-nw-resize z-50 flex items-center justify-center group/resize"
+              title="Drag to resize"
+            >
+              <div className="w-2.5 h-2.5 border-t border-l border-slate-350 group-hover/resize:border-indigo-600 transition-colors rounded-tl-[2px]" />
+            </div>
+
+            <CardHeader className="pb-3 pl-6">
+              <CardTitle className="flex items-center gap-2 text-sm select-none">
                 <Bot className="h-4 w-4 text-primary" />
                 AI Assistant
-                <span className="text-xs text-muted-foreground ml-auto">Powered by AI</span>
+                <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 cursor-pointer text-slate-400 hover:text-slate-700 shrink-0"
+                    onClick={() => {
+                      if (width === 550 && height === 650) {
+                        setWidth(360)
+                        setHeight(480)
+                      } else {
+                        setWidth(550)
+                        setHeight(650)
+                      }
+                    }}
+                    title={width === 550 ? "Restore size" : "Maximize chat"}
+                  >
+                    {width === 550 ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                  </Button>
+                  Powered by AI
+                </span>
               </CardTitle>
             </CardHeader>
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,12 @@ interface Message {
 }
 
 export function AIChatbot() {
+  const pathname = usePathname()
+  
+  if (pathname === "/interviewer/chat" || pathname.endsWith("/chat")) {
+    return null
+  }
+
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {

@@ -29,6 +29,9 @@ import {
   Star,
   MessageCircle,
   CheckSquare,
+  Brain,
+  Trophy,
+  CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -42,7 +45,11 @@ const jobSeekerNavigation = [
   { name: "Cover Letters", href: "/cover-letters", icon: Mail },
   { name: "Coding Profiles", href: "/coding-profiles", icon: Code },
   { name: "Study Materials", href: "/study-materials", icon: BookOpen },
+  { name: "Interview Directory", href: "/interviewer-directory", icon: Users },
   { name: "Interview Preparation", href: "/interview-prep", icon: MessageSquare },
+  { name: "AI Mock Interview", href: "/ai-mock-interview", icon: Brain },
+  { name: "Achievements & Streaks", href: "/gamification", icon: Trophy },
+  { name: "Billing & Plans", href: "/billing", icon: CreditCard },
   { name: "AI Dashboard", href: "/ai-dashboard", icon: Sparkles },
   { name: "AI Career Advisor", href: "/ai-advisor", icon: BrainCircuit },
   { name: "Job Library", href: "/job-descriptions", icon: Briefcase },

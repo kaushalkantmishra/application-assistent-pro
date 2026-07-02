@@ -15,6 +15,20 @@ import { Star, Github, Linkedin, MapPin, Edit, Save, X, Globe, DollarSign, Calen
 import { AppLoader } from "@/components/app-loader"
 import { toast } from "sonner"
 
+const getAvatarPlaceholder = (name: string) => {
+  const lowercaseName = name.toLowerCase()
+  const isFemale = lowercaseName.includes("sarah") || 
+                   lowercaseName.includes("aadhya") || 
+                   lowercaseName.includes("jane") || 
+                   lowercaseName.includes("priya") || 
+                   lowercaseName.includes("emma") || 
+                   lowercaseName.includes("lisa")
+  if (isFemale) {
+    return "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop"
+  }
+  return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop"
+}
+
 export default function InterviewerProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [profile, setProfile] = useState<any>(null)
@@ -156,7 +170,7 @@ export default function InterviewerProfilePage() {
           <Card className="shadow-sm">
             <CardHeader className="text-center pb-4">
               <Avatar className="h-20 w-20 mx-auto mb-3">
-                <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
+                <AvatarImage src={profile.avatar || getAvatarPlaceholder(profile.name)} alt={profile.name} />
                 <AvatarFallback className="text-xl font-bold bg-indigo-50 text-indigo-700">
                   {profile.name
                     .split(" ")
@@ -197,7 +211,7 @@ export default function InterviewerProfilePage() {
               {/* Member Since */}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Member Since</span>
-                <span className="font-bold">{new Date(profile.joinedDate).toLocaleDateString()}</span>
+                <span className="font-bold">{new Date(profile.joinedDate || profile.createdAt).toLocaleDateString()}</span>
               </div>
 
               {/* Pricing Type */}

@@ -1,22 +1,19 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "../db/schema";
+import { ilike } from "drizzle-orm";
 
 async function run() {
   const url = process.env.DATABASE_URL;
-  if (!url) {
-    console.error("DATABASE_URL is not defined in process env");
-    return;
-  }
+  if (!url) return;
   const sql = neon(url);
   const db = drizzle(sql, { schema });
 
   try {
-    const list = await db.select().from(schema.users);
-    console.log("Success! Users table has", list.length, "rows.");
-    console.log("Rows:", JSON.stringify(list.map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, image: u.image })), null, 2));
+    const list = await db.select().from(schema.users).where(ilike(schema.users.email, "%kaushal%"));
+    console.log("Users in db matching kaushal:", JSON.stringify(list, null, 2));
   } catch (error: any) {
-    console.error("Query failed. Error details:", error);
+    console.error(error);
   }
 }
 

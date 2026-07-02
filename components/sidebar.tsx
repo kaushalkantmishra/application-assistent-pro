@@ -32,6 +32,7 @@ import {
   Brain,
   Trophy,
   CreditCard,
+  Shield,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -50,6 +51,7 @@ const jobSeekerNavigation = [
   { name: "AI Mock Interview", href: "/ai-mock-interview", icon: Brain },
   { name: "Achievements & Streaks", href: "/gamification", icon: Trophy },
   { name: "Billing & Plans", href: "/billing", icon: CreditCard },
+  { name: "Community Forum", href: "/community", icon: MessageSquare },
   { name: "AI Dashboard", href: "/ai-dashboard", icon: Sparkles },
   { name: "AI Career Advisor", href: "/ai-advisor", icon: BrainCircuit },
   { name: "Job Library", href: "/job-descriptions", icon: Briefcase },
@@ -67,6 +69,11 @@ const interviewerNavigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
+const adminNavigation = [
+  { name: "Admin Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Settings", href: "/settings", icon: Settings },
+]
+
 export function Sidebar() {
   const { isCollapsed, setIsCollapsed } = useSidebar()
   const pathname = usePathname()
@@ -75,7 +82,11 @@ export function Sidebar() {
   const { data: session } = useSession()
   const role = useRole()
 
-  const navigation = role === "interviewer" ? interviewerNavigation : jobSeekerNavigation
+  const navigation = (session?.user as any)?.role === "admin"
+    ? adminNavigation
+    : role === "interviewer"
+    ? interviewerNavigation
+    : jobSeekerNavigation
 
   return (
     <>

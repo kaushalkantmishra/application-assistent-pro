@@ -1110,5 +1110,191 @@ export const leaderboards = pgTable("leaderboards", {
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 })
 
+// ==========================================================
+// PHASE 6 - ADMIN, COMMUNITY, & ANALYTICS SCHEMAS
+// ==========================================================
+
+export const platformSettings = pgTable("platform_settings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  maintenanceMode: boolean("maintenance_mode").default(false).notNull(),
+  theme: text("theme").default("dark").notNull(),
+  branding: jsonb("branding").default({}),
+  seo: jsonb("seo").default({}),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const emailTemplates = pgTable("email_templates", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  htmlContent: text("html_content").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const blogs = pgTable("blogs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  slug: text("slug").notNull().unique(),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const communityPosts = pgTable("community_posts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  category: text("category").notNull(), // Resume Review, Interview Experience, Coding, Career Advice, General
+  content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0).notNull(),
+  commentsCount: integer("comments_count").default(0).notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const communityComments = pgTable("community_comments", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  postId: text("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  commentText: text("comment_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const communityLikes = pgTable("community_likes", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  postId: text("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const communityBookmarks = pgTable("community_bookmarks", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  postId: text("post_id")
+    .notNull()
+    .references(() => communityPosts.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const communityFollowers = pgTable("community_followers", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  followerId: text("follower_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  followingId: text("following_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const adminLogs = pgTable("admin_logs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  adminId: text("admin_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  actionType: text("action_type").notNull(), // Suspend, Verify, Approve, ConfigChange
+  entityType: text("entity_type").notNull(), // User, Interviewer, PlatformSetting
+  entityId: text("entity_id"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const systemLogs = pgTable("system_logs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  logLevel: text("log_level").notNull(), // info, warn, error
+  message: text("message").notNull(),
+  context: jsonb("context").default({}),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const errorLogs = pgTable("error_logs", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  errorName: text("error_name").notNull(),
+  errorMessage: text("error_message").notNull(),
+  stackTrace: text("stack_trace"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const pushNotifications = pgTable("push_notifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isSent: boolean("is_sent").default(false).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const userDevices = pgTable("user_devices", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  deviceType: text("device_type").notNull(), // ios, android, web
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const newsletters = pgTable("newsletters", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  email: text("email").notNull().unique(),
+  status: text("status").default("subscribed").notNull(), // subscribed, unsubscribed
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const faq = pgTable("faq", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  category: text("category").notNull(), // Resume, Interview, General, Payment
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const supportTickets = pgTable("support_tickets", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  status: text("status").default("open").notNull(), // open, resolved, closed
+  priority: text("priority").default("normal").notNull(), // low, normal, high, urgent
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const supportMessages = pgTable("support_messages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  ticketId: text("ticket_id")
+    .notNull()
+    .references(() => supportTickets.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messageText: text("message_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const analyticsSnapshots = pgTable("analytics_snapshots", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  metricName: text("metric_name").notNull(), // dau, mau, revenue_cents, resumes_created
+  metricValue: integer("metric_value").notNull(),
+  snapshotDate: timestamp("snapshot_date", { mode: "date" }).defaultNow().notNull(),
+})
+
+
 
 

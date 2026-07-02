@@ -1295,6 +1295,92 @@ export const analyticsSnapshots = pgTable("analytics_snapshots", {
   snapshotDate: timestamp("snapshot_date", { mode: "date" }).defaultNow().notNull(),
 })
 
+// ==========================================================
+// VIDEO MEETING SCHEMA ADDITIONS
+// ==========================================================
+
+export const videoRooms = pgTable("video_rooms", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  bookingId: text("booking_id")
+    .notNull()
+    .references(() => interviewBookings.id, { onDelete: "cascade" }),
+  provider: text("provider").default("mock").notNull(), // mock, 100ms, daily.co
+  roomName: text("room_name").notNull(),
+  status: text("status").default("active").notNull(), // active, ended
+  hostId: text("host_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const videoParticipants = pgTable("video_participants", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  roomId: text("room_id")
+    .notNull()
+    .references(() => videoRooms.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  joinTime: timestamp("join_time", { mode: "date" }).defaultNow().notNull(),
+  leaveTime: timestamp("leave_time", { mode: "date" }),
+})
+
+export const meetingSessions = pgTable("meeting_sessions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  roomId: text("room_id")
+    .notNull()
+    .references(() => videoRooms.id, { onDelete: "cascade" }),
+  startTime: timestamp("start_time", { mode: "date" }).defaultNow().notNull(),
+  endTime: timestamp("end_time", { mode: "date" }),
+  duration: integer("duration").default(0).notNull(), // in seconds
+})
+
+export const meetingChat = pgTable("meeting_chat", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  roomId: text("room_id")
+    .notNull()
+    .references(() => videoRooms.id, { onDelete: "cascade" }),
+  senderId: text("sender_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messageText: text("message_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const meetingRecordings = pgTable("meeting_recordings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  roomId: text("room_id")
+    .notNull()
+    .references(() => videoRooms.id, { onDelete: "cascade" }),
+  recordingUrl: text("recording_url").notNull(),
+  duration: integer("duration").notNull(), // in seconds
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const meetingDevices = pgTable("meeting_devices", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  cameraName: text("camera_name"),
+  micName: text("mic_name"),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const meetingPermissions = pgTable("meeting_permissions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  roomId: text("room_id")
+    .notNull()
+    .references(() => videoRooms.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  allowScreenShare: boolean("allow_screen_share").default(true).notNull(),
+  isMutedByHost: boolean("is_muted_by_host").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+
 
 
 

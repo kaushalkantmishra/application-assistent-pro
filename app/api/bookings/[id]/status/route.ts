@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { db } from "@/db"
-import { interviewBookings, bookingHistory, calendarEvents, interviewNotifications, interviewers } from "@/db/schema"
+import { interviewBookings, bookingHistory, calendarEvents, interviewNotifications, interviewers, videoRooms } from "@/db/schema"
 import { UserRepository } from "@/repositories/user.repository"
 import { eq, and } from "drizzle-orm"
 
@@ -75,22 +75,44 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const durationMs = booking.duration * 60 * 1000
       const end = new Date(booking.scheduledDate.getTime() + durationMs)
 
-      // Create Calendar event for candidate
+      // Fetch interviewer's user id to set as host and log event
+      const interviewer = await db
+        .select()
+        .from(interviewers)
+        .where(eq(interviewers.id, booking.interviewerId))
+        .then(r => r[0])
+
+      const hostId = interviewer?.userId || userId
+
+      // 1. Create a video room
+      const [newRoom] = await db
+        .insert(videoRooms)
+        .values({
+          bookingId,
+          provider: "mock",
+          roomName: booking.interviewType || "Interview Room",
+          status: "active",
+          hostId,
+        })
+        .returning()
+
+      const generatedMeetingLink = `/meetings/${newRoom.id}`
+
+      // 2. Update booking meetingLink
+      await db
+        .update(interviewBookings)
+        .set({ meetingLink: generatedMeetingLink })
+        .where(eq(interviewBookings.id, bookingId))
+
+      // 3. Create Calendar event for candidate
       await db.insert(calendarEvents).values({
         userId: booking.candidateId,
         title: `Mock Interview: ${booking.interviewType}`,
         description: `Mock Interview Session. Duration: ${booking.duration} mins.`,
         start: booking.scheduledDate,
         end,
-        link: booking.meetingLink,
+        link: generatedMeetingLink,
       })
-
-      // Fetch interviewer's user id to log event for them too
-      const interviewer = await db
-        .select()
-        .from(interviewers)
-        .where(eq(interviewers.id, booking.interviewerId))
-        .then(r => r[0])
 
       if (interviewer && interviewer.userId) {
         await db.insert(calendarEvents).values({
@@ -99,7 +121,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           description: `Mock Interview Session. Duration: ${booking.duration} mins.`,
           start: booking.scheduledDate,
           end,
-          link: booking.meetingLink,
+          link: generatedMeetingLink,
         })
 
         // Notify candidate
@@ -107,8 +129,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           userId: booking.candidateId,
           type: "accepted",
           title: "Booking Accepted",
-          message: `Your booking request for ${booking.interviewType} has been accepted.`,
-          link: `/resumes`, // or dashboard
+          message: `Your booking request for ${booking.interviewType} has been accepted. Join at: ${generatedMeetingLink}`,
+          link: generatedMeetingLink,
         })
       }
     } else if (status === "Rejected" || status === "Cancelled") {

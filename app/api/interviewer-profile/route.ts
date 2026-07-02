@@ -17,6 +17,12 @@ const UpdateInterviewerProfileSchema = z.object({
   github: z.string().optional().nullable(),
   availability: z.any().optional().nullable(),
   interviewTypes: z.array(z.string()).optional().nullable(),
+  
+  portfolio: z.string().optional().nullable(),
+  pricingType: z.string().optional().nullable(),
+  hourlyCharges: z.number().optional().nullable(),
+  languages: z.array(z.string()).optional().nullable(),
+  interviewCategories: z.array(z.string()).optional().nullable(),
 })
 
 export async function GET() {
@@ -108,18 +114,35 @@ export async function POST(request: NextRequest) {
     // Check if profile exists
     const existing = await db.select().from(interviewers).where(eq(interviewers.userId, userId)).then((r) => r[0])
 
+    const updateData = {
+      name: parsed.data.name,
+      company: parsed.data.company ?? null,
+      role: parsed.data.role ?? null,
+      department: parsed.data.department ?? null,
+      experience: parsed.data.experience ?? null,
+      specializations: parsed.data.specializations ?? null,
+      bio: parsed.data.bio ?? null,
+      linkedIn: parsed.data.linkedIn ?? null,
+      github: parsed.data.github ?? null,
+      availability: parsed.data.availability ?? null,
+      interviewTypes: parsed.data.interviewTypes ?? null,
+      portfolio: parsed.data.portfolio ?? null,
+      pricingType: parsed.data.pricingType || "free",
+      hourlyCharges: parsed.data.hourlyCharges || 0,
+      languages: parsed.data.languages ?? null,
+      interviewCategories: parsed.data.interviewCategories ?? null,
+      updatedAt: new Date(),
+    }
+
     let profile
     if (existing) {
-      const result = await db.update(interviewers).set({
-        ...parsed.data,
-        updatedAt: new Date(),
-      }).where(eq(interviewers.userId, userId)).returning()
+      const result = await db.update(interviewers).set(updateData).where(eq(interviewers.userId, userId)).returning()
       profile = result[0]
     } else {
       const result = await db.insert(interviewers).values({
         userId,
         email,
-        ...parsed.data,
+        ...updateData,
       }).returning()
       profile = result[0]
     }

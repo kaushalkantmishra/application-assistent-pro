@@ -62,7 +62,7 @@ export const verificationTokens = pgTable(
 )
 
 // ----------------------------------------------------
-// USER PROFILE SCHEMA
+// USER PROFILE SCHEMA (JOB SEEKER)
 // ----------------------------------------------------
 
 export const userProfiles = pgTable("user_profiles", {
@@ -73,12 +73,34 @@ export const userProfiles = pgTable("user_profiles", {
     .references(() => users.id, { onDelete: "cascade" }),
   phone: text("phone"),
   location: text("location"),
+  about: text("about"),
+  currentDesignation: text("current_designation"),
+  yearsOfExperience: integer("years_of_experience").default(0),
+  currentCompany: text("current_company"),
+  currentSalary: text("current_salary"),
+  expectedSalary: text("expected_salary"),
+  preferredIndustry: text("preferred_industry"),
+  preferredWorkMode: text("preferred_work_mode"), // "Remote" | "Hybrid" | "On-site"
+  preferredLocations: jsonb("preferred_locations").default([]).$type<string[]>(),
+  languages: jsonb("languages").default([]).$type<string[]>(),
   education: text("education"),
   experience: text("experience"),
   skills: jsonb("skills").default([]).$type<string[]>(),
   preferredRoles: jsonb("preferred_roles").default([]).$type<string[]>(),
   preferredCompanies: jsonb("preferred_companies").default([]).$type<string[]>(),
-  preferredLocations: jsonb("preferred_locations").default([]).$type<string[]>(),
+  
+  // Social/Coding links (direct references on profile)
+  github: text("github"),
+  linkedin: text("linkedin"),
+  portfolio: text("portfolio"),
+  leetcode: text("leetcode"),
+  geeksforgeeks: text("geeksforgeeks"),
+  codechef: text("codechef"),
+  codeforces: text("codeforces"),
+  hackerrank: text("hackerrank"),
+  hackerearth: text("hackerearth"),
+  website: text("website"),
+
   resumeFileName: text("resume_file_name"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
@@ -86,62 +108,57 @@ export const userProfiles = pgTable("user_profiles", {
 })
 
 // ----------------------------------------------------
-// JOB APPLICATIONS TRACKER SCHEMA
+// CODING PROFILES SCHEMA
 // ----------------------------------------------------
 
-export const applications = pgTable("applications", {
+export const codingProfiles = pgTable("coding_profiles", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
+    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  company: text("company").notNull(),
-  role: text("role").notNull(),
-  status: text("status").notNull(), // 'Applied' | 'Interview Scheduled' | 'Offer Received' | 'Rejected' | 'Saved'
-  appliedDate: timestamp("applied_date", { mode: "date" }).notNull(),
-  deadline: timestamp("deadline", { mode: "date" }),
-  location: text("location"),
-  salary: text("salary"),
-  notes: text("notes"),
+  provider: text("provider").notNull(), // 'github' | 'linkedin' | 'leetcode' | 'geeksforgeeks' | 'codechef' | 'codeforces' | 'hackerrank' | 'hackerearth' | 'portfolio' | 'website'
+  url: text("url").notNull(),
+  username: text("username"),
+  status: text("status").default("connected").notNull(), // 'connected' | 'syncing' | 'error'
+  lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at", { mode: "date" }),
-}, (table) => ({
-  userIdIdx: index("applications_user_id_idx").on(table.userId),
-}))
-
-// ----------------------------------------------------
-// GOVERNMENT JOBS SCHEMA
-// ----------------------------------------------------
-
-export const governmentJobs = pgTable("government_jobs", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  title: text("title").notNull(),
-  department: text("department").notNull(),
-  eligibility: text("eligibility"),
-  location: text("location"),
-  lastDate: timestamp("last_date", { mode: "date" }),
-  applyLink: text("apply_link"),
-  vacancies: integer("vacancies"),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at", { mode: "date" }),
 })
 
 // ----------------------------------------------------
-// CORPORATE JOBS SCHEMA
+// INTERVIEWERS SCHEMA
 // ----------------------------------------------------
 
-export const corporateJobs = pgTable("corporate_jobs", {
+export const interviewers = pgTable("interviewers", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  title: text("title").notNull(),
-  company: text("company").notNull(),
-  location: text("location"),
-  type: text("type"), // 'Full-time' | 'Part-time' | 'Contract' | 'Remote'
-  salary: text("salary"),
-  postedDate: timestamp("posted_date", { mode: "date" }),
-  deadline: timestamp("deadline", { mode: "date" }),
-  description: text("description"),
-  requirements: jsonb("requirements").default([]).$type<string[]>(),
-  status: text("status").default("active"), // 'active' | 'closed' | 'draft'
+  userId: text("user_id")
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  role: text("role"), // designation
+  department: text("department"),
+  experience: integer("experience"),
+  specializations: jsonb("specializations").default([]).$type<string[]>(),
+  bio: text("bio"),
+  avatar: text("avatar"),
+  rating: real("rating").default(5.0),
+  totalInterviews: integer("total_interviews").default(0),
+  availability: jsonb("availability").default({ days: [], timeSlots: [] }).$type<{ days: string[]; timeSlots: string[] }>(),
+  interviewTypes: jsonb("interview_types").default([]).$type<string[]>(),
+  
+  // Pricing/Details
+  pricingType: text("pricing_type").default("free").notNull(), // "free" | "paid"
+  hourlyCharges: integer("hourly_charges").default(0).notNull(),
+  verificationStatus: text("verification_status").default("pending").notNull(), // "pending" | "verified" | "rejected"
+  languages: jsonb("languages").default([]).$type<string[]>(),
+  interviewCategories: jsonb("interview_categories").default([]).$type<string[]>(),
+
+  linkedIn: text("linkedin"),
+  github: text("github"),
+  portfolio: text("portfolio"),
+  isActive: boolean("is_active").default(true),
+  joinedDate: timestamp("joined_date", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { mode: "date" }),
@@ -163,7 +180,7 @@ export const interviewQuestions = pgTable("interview_questions", {
 })
 
 // ----------------------------------------------------
-// READING MATERIALS SCHEMA
+// STUDY MATERIALS SCHEMA
 // ----------------------------------------------------
 
 export const readingMaterials = pgTable("reading_materials", {
@@ -183,33 +200,42 @@ export const readingMaterials = pgTable("reading_materials", {
 })
 
 // ----------------------------------------------------
-// INTERVIEWERS SCHEMA
+// LEARNING PATHS & PROGRESS
 // ----------------------------------------------------
 
-export const interviewers = pgTable("interviewers", {
+export const learningPaths = pgTable("learning_paths", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category").notNull(), // 'Frontend' | 'Backend' | 'React' | 'Next.js' | 'Node.js' | 'DSA' | 'System Design' | 'Behavioral' | 'HR' | 'Aptitude'
+  difficulty: text("difficulty").default("Beginner").notNull(), // 'Beginner' | 'Intermediate' | 'Advanced'
+  estimatedTime: text("estimated_time"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const learningProgress = pgTable("learning_progress", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id")
+    .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
-  company: text("company"),
-  role: text("role"),
-  department: text("department"),
-  experience: integer("experience"),
-  specializations: jsonb("specializations").default([]).$type<string[]>(),
-  bio: text("bio"),
-  avatar: text("avatar"),
-  rating: real("rating").default(5.0),
-  totalInterviews: integer("total_interviews").default(0),
-  availability: jsonb("availability").default({ days: [], timeSlots: [] }).$type<{ days: string[]; timeSlots: string[] }>(),
-  interviewTypes: jsonb("interview_types").default([]).$type<string[]>(),
-  linkedIn: text("linkedin"),
-  github: text("github"),
-  isActive: boolean("is_active").default(true),
-  joinedDate: timestamp("joined_date", { mode: "date" }),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  materialId: text("material_id").notNull(), // references reading_materials.id
+  completed: boolean("completed").default(false).notNull(),
+  progress: integer("progress").default(0).notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
-  deletedAt: timestamp("deleted_at", { mode: "date" }),
+})
+
+// ----------------------------------------------------
+// GENERIC BOOKMARKS SCHEMA (REPLACING FAVORITES)
+// ----------------------------------------------------
+
+export const bookmarks = pgTable("bookmarks", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  itemType: text("item_type").notNull(), // 'study_material' | 'interview_question' | 'resume_template' | 'article' | 'video'
+  itemId: text("item_id").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
 })
 
 // ----------------------------------------------------
@@ -278,20 +304,6 @@ export const settings = pgTable("settings", {
 })
 
 // ----------------------------------------------------
-// FAVORITES SCHEMA
-// ----------------------------------------------------
-
-export const favorites = pgTable("favorites", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  itemType: text("item_type").notNull(), // 'job' | 'govt_job' | 'reading_material'
-  itemId: text("item_id").notNull(),
-  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
-})
-
-// ----------------------------------------------------
 // RECENT SEARCHES SCHEMA
 // ----------------------------------------------------
 
@@ -302,6 +314,26 @@ export const recentSearches = pgTable("recent_searches", {
     .references(() => users.id, { onDelete: "cascade" }),
   query: text("query").notNull(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+// ----------------------------------------------------
+// USER STATISTICS SCHEMA
+// ----------------------------------------------------
+
+export const userStatistics = pgTable("user_statistics", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  resumeCount: integer("resume_count").default(0).notNull(),
+  coverLetterCount: integer("cover_letter_count").default(0).notNull(),
+  interviewsCount: integer("interviews_count").default(0).notNull(),
+  studyProgressPercent: integer("study_progress_percent").default(0).notNull(),
+  learningStreak: integer("learning_streak").default(0).notNull(),
+  aiUsageCount: integer("ai_usage_count").default(0).notNull(),
+  profileCompletionPercent: integer("profile_completion_percent").default(0).notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 })
 
 // ----------------------------------------------------
@@ -373,7 +405,7 @@ export const tblAiResumeAnalysis = pgTable(
     educationMatchPercent: integer("education_match_percent").notNull(),
     keywordMatchPercent: integer("keyword_match_percent").notNull(),
     atsScore: integer("ats_score").notNull(),
-    analysisJson: jsonb("analysis_json").notNull(), // missing skills, keywords, action verbs, etc.
+    analysisJson: jsonb("analysis_json").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   },
   (table) => ({
@@ -397,8 +429,8 @@ export const tblCoverLetters = pgTable(
     companyName: text("company_name"),
     hiringManager: text("hiring_manager"),
     jobRole: text("job_role"),
-    tone: text("tone"), // "professional" | "friendly" | "formal" | "confident"
-    length: text("length"), // "short" | "medium" | "long"
+    tone: text("tone"),
+    length: text("length"),
     coverLetterText: text("cover_letter_text").notNull(),
     createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),

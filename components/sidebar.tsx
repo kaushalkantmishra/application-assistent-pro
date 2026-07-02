@@ -10,10 +10,7 @@ import {
   LayoutDashboard,
   User,
   FileText,
-  Building2,
-  Briefcase,
   MessageSquare,
-  BarChart3,
   Menu,
   X,
   BookOpen,
@@ -22,6 +19,13 @@ import {
   LogOut,
   ClipboardList,
   Mail,
+  Calendar,
+  Settings,
+  Sparkles,
+  Code,
+  Star,
+  MessageCircle,
+  CheckSquare,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
@@ -29,23 +33,25 @@ import LogoutModal from "./modals/logout-modal"
 
 const jobSeekerNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Profile", href: "/profile", icon: User },
-  { name: "My Resumes", href: "/resumes", icon: FileText },
-  { name: "AI Cover Letters", href: "/cover-letters", icon: Mail },
-  { name: "Applications", href: "/applications", icon: ClipboardList },
-  { name: "Govt Jobs", href: "/govt-jobs", icon: Building2 },
-  { name: "Latest Jobs", href: "/latest-jobs", icon: Briefcase },
-  { name: "Interview Prep", href: "/interview-prep", icon: MessageSquare },
-  { name: "Reading Materials", href: "/reading-materials", icon: BookOpen },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "My Profile", href: "/profile", icon: User },
+  { name: "Resume Builder", href: "/resumes", icon: FileText },
+  { name: "Cover Letters", href: "/cover-letters", icon: Mail },
+  { name: "Coding Profiles", href: "/coding-profiles", icon: Code },
+  { name: "Study Materials", href: "/study-materials", icon: BookOpen },
+  { name: "Interview Preparation", href: "/interview-prep", icon: MessageSquare },
+  { name: "AI Assistant", href: "/ai-assistant", icon: Sparkles },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 const interviewerNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Profile", href: "/profile", icon: User },
-  { name: "Interviewer Profile", href: "/interviewer-profile", icon: UserCheck },
-  { name: "Interviewer Directory", href: "/interviewer-directory", icon: Users },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Profile", href: "/interviewer-profile", icon: UserCheck },
+  { name: "Availability", href: "/interviewer/availability", icon: Calendar },
+  { name: "Bookings", href: "/interviewer/bookings", icon: CheckSquare },
+  { name: "Candidates", href: "/interviewer/candidates", icon: Users },
+  { name: "Chat", href: "/interviewer/chat", icon: MessageCircle },
+  { name: "Reviews", href: "/interviewer/reviews", icon: Star },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function Sidebar() {

@@ -10,7 +10,9 @@ import { useAutosaveStore } from "@/stores/autosave-store"
 import { RESUME_SECTIONS_SCHEMAS, SectionSchema, getInitialResumeJson } from "@/lib/resume-schemas"
 import { ResumeTemplateSelector } from "./resume-templates"
 import AiAssistantDashboard from "./ai-assistant-dashboard"
+import { ContentLibraryDialog } from "./content-library-dialog"
 import { AppLoader } from "@/components/app-loader"
+import { BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -46,6 +48,7 @@ import {
   RotateCcw,
   Download,
   Settings,
+  History,
   X,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -99,6 +102,117 @@ export default function ResumeEditorPage({ id }: { id: string }) {
   // Drag and Drop Section indices
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
+  // Content library states
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [libraryType, setLibraryType] = useState<"summary" | "objective" | "project" | "achievement" | "skill" | "certificate" | "experience">("summary")
+  const [libraryCallback, setLibraryCallback] = useState<(val: string) => void>(() => () => {})
+  const [libraryCurrentValue, setLibraryCurrentValue] = useState("")
+
+  const isLibraryField = (sectionId: string, fieldId: string) => {
+    const s = sectionId.toLowerCase()
+    const f = fieldId.toLowerCase()
+    return (
+      s.includes("summary") ||
+      s.includes("objective") ||
+      s.includes("experience") ||
+      s.includes("work") ||
+      s.includes("project") ||
+      s.includes("skill") ||
+      s.includes("cert") ||
+      f.includes("summary") ||
+      f.includes("objective") ||
+      f.includes("description") ||
+      f.includes("achievement") ||
+      f.includes("award") ||
+      f.includes("skill") ||
+      f.includes("cert")
+    )
+  }
+
+  const getLibraryType = (sectionId: string, fieldId: string): "summary" | "objective" | "project" | "achievement" | "skill" | "certificate" | "experience" => {
+    const s = sectionId.toLowerCase()
+    const f = fieldId.toLowerCase()
+    if (s.includes("summary") || f.includes("summary")) return "summary"
+    if (s.includes("objective") || f.includes("objective")) return "objective"
+    if (s.includes("work") || s.includes("experience") || f.includes("responsibilities") || f.includes("description")) return "experience"
+    if (s.includes("project")) return "project"
+    if (s.includes("skill") || f.includes("skill")) return "skill"
+    if (s.includes("cert") || f.includes("cert")) return "certificate"
+    if (f.includes("achievement") || f.includes("award")) return "achievement"
+    return "summary"
+  }
+
+  const openLibrary = (type: any, currentVal: string, onSelect: (val: string) => void) => {
+    setLibraryType(type)
+    setLibraryCurrentValue(currentVal)
+    setLibraryCallback(() => onSelect)
+    setLibraryOpen(true)
+  }
+
+  // Versions history states
+  const [showVersions, setShowVersions] = useState(false)
+  const [versions, setVersions] = useState<any[]>([])
+  const [newVersionName, setNewVersionName] = useState("")
+
+  const fetchVersions = async () => {
+    try {
+      const res = await fetch(`/api/resumes/${id}/versions`)
+      if (res.ok) {
+        setVersions(await res.json())
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleRestoreVersion = async (versionId: string) => {
+    try {
+      setStatus("saving")
+      const res = await fetch(`/api/resumes/${id}/versions?action=restore&versionId=${versionId}`, {
+        method: "POST",
+      })
+
+      if (res.ok) {
+        toast.success("Snapshot version restored successfully!")
+        const getRes = await fetch(`/api/resumes/${id}`)
+        if (getRes.ok) {
+          const data = await getRes.json()
+          setResume(data)
+          setStatus("saved")
+        }
+      } else {
+        toast.error("Failed to restore version snapshot")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error("Error restoring version")
+    }
+  }
+
+  const handleSaveManualVersion = async () => {
+    if (!newVersionName.trim() || !resume) return
+    try {
+      setStatus("saving")
+      const res = await fetch(`/api/resumes/${id}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          versionName: newVersionName.trim(),
+          resumeJson: resume.resumeJson,
+        }),
+      })
+
+      if (res.ok) {
+        toast.success("Checkpoint version saved successfully")
+        setNewVersionName("")
+        fetchVersions()
+        setStatus("saved")
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   // 1. Fetch Resume Data on Mount
   useEffect(() => {
     const fetchResume = async () => {
@@ -121,6 +235,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
       }
     }
     fetchResume()
+    fetchVersions()
   }, [id])
 
   const ensureNonDefaultResume = async (): Promise<string> => {
@@ -173,6 +288,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
         if (res.ok) {
           setStatus("saved")
           setLastSavedAt(new Date())
+          fetchVersions()
         } else {
           setStatus("error")
         }
@@ -544,7 +660,7 @@ export default function ResumeEditorPage({ id }: { id: string }) {
             className="h-8 font-bold border-transparent hover:border-input focus:border-input max-w-[250px] px-2 text-sm"
           />
           {/* Autosave Status Badge */}
-          <div className="flex items-center gap-1.5 ml-2">
+          <div className="flex items-center gap-2 ml-2">
             {status === "saving" && (
               <Badge variant="outline" className="text-[10px] text-blue-600 bg-blue-50 border-blue-200 animate-pulse">
                 Saving...
@@ -560,11 +676,19 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                 Error Saving
               </Badge>
             )}
+            {lastSavedAt && (
+              <span className="text-[10px] text-slate-400">
+                Last saved: {new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Top bar controls (Undo, Redo, Template, Print option) */}
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => setShowVersions(!showVersions)} className="h-8 w-8 cursor-pointer" title="Version History">
+            <History className="h-4 w-4" />
+          </Button>
           {/* Undo/Redo */}
           <Button variant="ghost" size="icon" onClick={undo} disabled={past.length === 0} className="h-8 w-8 cursor-pointer" title="Undo">
             <Undo2 className="h-4 w-4" />
@@ -722,12 +846,24 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                 onClick={() => setShowAiPanel(!showAiPanel)}
                 className={`w-full flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all select-none cursor-pointer mt-2 ${
                   showAiPanel
-                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm font-semibold animate-pulse"
+                    ? "bg-indigo-650 text-white border-indigo-650 shadow-sm font-semibold animate-pulse"
                     : "hover:bg-indigo-50/50 bg-card border-indigo-200 border-dashed text-indigo-700"
                 }`}
               >
                 <Sparkles className="h-4 w-4 shrink-0" />
-                <span className="text-xs font-semibold">✨ AI Assistant</span>
+                <span className="text-xs font-semibold">✨ AI Assistant Workspace</span>
+              </button>
+
+              {/* Optimize Entire Resume Button */}
+              <button
+                onClick={() => {
+                  setShowAiPanel(true);
+                  toast.info("AI Assistant Workspace opened. Paste a target Job Description and trigger 'Optimize Entire Resume' on the right panel!");
+                }}
+                className="w-full flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all select-none cursor-pointer mt-2 hover:bg-slate-50 bg-card border-slate-200 text-slate-700"
+              >
+                <Sparkles className="h-4 w-4 shrink-0 text-indigo-600" />
+                <span className="text-xs font-semibold">Optimize Entire Resume</span>
               </button>
             </div>
           </Panel>
@@ -915,6 +1051,96 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                     </Select>
                   </div>
 
+                  {/* Secondary Color Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-slate-700">Secondary Text Color</Label>
+                    <Select
+                      value={resumeJson.design?.secondaryColor || "#475569"}
+                      onValueChange={(val) => updateField("design", "secondaryColor", val)}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue placeholder="Secondary Color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="#1e293b" className="text-xs">Slate Dark (#1e293b)</SelectItem>
+                        <SelectItem value="#475569" className="text-xs font-semibold">Slate Medium (#475569)</SelectItem>
+                        <SelectItem value="#64748b" className="text-xs">Slate Light (#64748b)</SelectItem>
+                        <SelectItem value="#000000" className="text-xs">Black (#000000)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Section Gap Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-slate-700">Section Gap (Spacing)</Label>
+                    <Select
+                      value={resumeJson.design?.sectionGap || "medium"}
+                      onValueChange={(val) => updateField("design", "sectionGap", val)}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small" className="text-xs">Small (Compact)</SelectItem>
+                        <SelectItem value="medium" className="text-xs">Medium (Standard)</SelectItem>
+                        <SelectItem value="large" className="text-xs">Large (Spacious)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Border Radius Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-slate-700">Border Radius (Badges/Lines)</Label>
+                    <Select
+                      value={resumeJson.design?.borderRadius || "sm"}
+                      onValueChange={(val) => updateField("design", "borderRadius", val)}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="text-xs">None (Sharp)</SelectItem>
+                        <SelectItem value="sm" className="text-xs">Small (Rounded)</SelectItem>
+                        <SelectItem value="md" className="text-xs">Medium (Curve)</SelectItem>
+                        <SelectItem value="full" className="text-xs">Full (Pill)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Columns Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-slate-700">Layout Columns</Label>
+                    <Select
+                      value={resumeJson.design?.columns || "1"}
+                      onValueChange={(val) => updateField("design", "columns", val)}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1" className="text-xs">Single Column (ATS Standard)</SelectItem>
+                        <SelectItem value="2" className="text-xs">Double Column (Side-by-Side)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Paper Size Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-slate-700">Paper Size</Label>
+                    <Select
+                      value={resumeJson.design?.paperSize || "a4"}
+                      onValueChange={(val) => updateField("design", "paperSize", val)}
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="a4" className="text-xs">A4 Portrait</SelectItem>
+                        <SelectItem value="letter" className="text-xs">US Letter</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Headings styling switches */}
                   <div className="border-t pt-4 space-y-4">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Heading Styles</h4>
@@ -959,11 +1185,24 @@ export default function ResumeEditorPage({ id }: { id: string }) {
               <div className="flex flex-col h-full overflow-hidden">
                 <div className="p-4 border-b bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-lg font-bold text-slate-800">
                         {resumeJson[activeSectionId]?.title || activeSchema.title}
                       </h3>
                       {resumeJson[activeSectionId]?.custom && <Badge variant="secondary">Custom</Badge>}
+                      
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        onClick={() => {
+                          setShowAiPanel(true);
+                          toast.info(`AI Assistant Workspace opened. To optimize ${activeSchema.title}, paste a target Job Description and trigger 'Optimize Section' on the right panel!`);
+                        }}
+                        className="h-6 text-[10px] gap-1 px-2 border-indigo-200 text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 cursor-pointer"
+                      >
+                        <Sparkles className="h-3 w-3" /> Optimize
+                      </Button>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">{activeSchema.description}</p>
                   </div>
@@ -1101,7 +1340,22 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                                         key={field.id}
                                         className={field.type === "textarea" ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}
                                       >
-                                        <Label className="text-xs font-semibold text-slate-700">{field.label}</Label>
+                                        <div className="flex items-center justify-between">
+                                          <Label className="text-xs font-semibold text-slate-700">{field.label}</Label>
+                                          {isLibraryField(activeSectionId, field.id) && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              type="button"
+                                              onClick={() => openLibrary(getLibraryType(activeSectionId, field.id), val, (newVal) => {
+                                                updateRepeatableItem(activeSectionId, item.id, field.id, newVal)
+                                              })}
+                                              className="h-5 text-[9px] font-bold text-indigo-650 hover:text-indigo-700 px-1.5 cursor-pointer flex items-center gap-0.5"
+                                            >
+                                              <BookOpen className="h-2.5 w-2.5" /> Library
+                                            </Button>
+                                          )}
+                                        </div>
                                         {field.type === "textarea" ? (
                                           <Textarea
                                             value={val}
@@ -1165,7 +1419,22 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                                 key={field.id}
                                 className={field.type === "textarea" ? "sm:col-span-2 space-y-1.5" : "space-y-1.5"}
                               >
-                                <Label className="text-xs font-semibold text-slate-700">{field.label}</Label>
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs font-semibold text-slate-700">{field.label}</Label>
+                                  {isLibraryField(activeSectionId, field.id) && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      type="button"
+                                      onClick={() => openLibrary(getLibraryType(activeSectionId, field.id), val, (newVal) => {
+                                        updateField(activeSectionId, field.id, newVal)
+                                      })}
+                                      className="h-5 text-[9px] font-bold text-indigo-650 hover:text-indigo-700 px-1.5 cursor-pointer flex items-center gap-0.5"
+                                    >
+                                      <BookOpen className="h-2.5 w-2.5" /> Library
+                                    </Button>
+                                  )}
+                                </div>
                                 {field.type === "textarea" ? (
                                   <Textarea
                                     value={val}
@@ -1253,6 +1522,68 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                 </div>
                 <div className="flex-1 overflow-hidden relative">
                   <AiAssistantDashboard id={id} />
+                </div>
+              </Panel>
+            </>
+          )}
+
+          {showVersions && (
+            <>
+              <PanelResizeHandle className="w-1.5 hover:bg-indigo-300/30 bg-slate-100 transition-colors cursor-col-resize shrink-0 no-print" />
+              <Panel defaultSize={25} minSize={20} maxSize={40} className="bg-card border-r border-l flex flex-col overflow-hidden h-full no-print">
+                <div className="p-3 border-b flex justify-between items-center bg-indigo-50/20 shrink-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5" /> Version History snapshots
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 cursor-pointer hover:bg-slate-200/50"
+                    onClick={() => setShowVersions(false)}
+                    title="Close Panel"
+                  >
+                    <X className="h-4 w-4 text-slate-500" />
+                  </Button>
+                </div>
+                
+                <div className="p-3 border-b space-y-2 shrink-0">
+                  <Label className="text-[10px] font-bold text-slate-600 uppercase">Save Checkpoint</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="e.g. V2 Tailored"
+                      value={newVersionName}
+                      onChange={(e) => setNewVersionName(e.target.value)}
+                      className="text-xs h-8"
+                    />
+                    <Button size="sm" onClick={handleSaveManualVersion} className="h-8 text-xs cursor-pointer">
+                      Save
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                  {versions.map((ver) => (
+                    <div key={ver.id} className="p-2.5 border rounded-lg bg-slate-50 text-xs flex flex-col justify-between hover:bg-slate-100/50">
+                      <div className="flex justify-between items-start">
+                        <span className="font-bold text-slate-700 truncate pr-1">{ver.versionName}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRestoreVersion(ver.id)}
+                          className="h-6 text-[10px] font-bold text-indigo-650 hover:text-indigo-700 pl-1 pr-1 font-sans"
+                        >
+                          Restore
+                        </Button>
+                      </div>
+                      <span className="text-[9px] text-slate-400 mt-1">
+                        {new Date(ver.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+
+                  {versions.length === 0 && (
+                    <span className="text-xs text-slate-400 block text-center py-6">No snapshots saved yet.</span>
+                  )}
                 </div>
               </Panel>
             </>
@@ -1400,6 +1731,14 @@ export default function ResumeEditorPage({ id }: { id: string }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ContentLibraryDialog
+        isOpen={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        contentType={libraryType}
+        currentValue={libraryCurrentValue}
+        onSelect={libraryCallback}
+      />
     </div>
   )
 }

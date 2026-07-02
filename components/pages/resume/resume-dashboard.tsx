@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AppLoader } from "@/components/app-loader"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
 import {
   Search,
@@ -37,10 +40,29 @@ import {
   Trash2,
   Edit,
   Copy,
-  ChevronRight,
+  FolderOpen,
+  Tag,
+  Upload,
+  Calendar,
+  Share2,
   Sparkles,
+  ExternalLink,
+  ChevronRight,
+  Eye,
 } from "lucide-react"
 import { toast } from "sonner"
+
+interface Folder {
+  id: string
+  name: string
+  createdAt: string
+}
+
+interface TagType {
+  id: string
+  name: string
+  createdAt: string
+}
 
 interface Resume {
   id: string
@@ -52,6 +74,8 @@ interface Resume {
   createdAt: string
   updatedAt: string
   resumeJson: Record<string, any>
+  folder?: Folder | null
+  tags: TagType[]
 }
 
 const TEMPLATE_OPTIONS = [
@@ -59,267 +83,73 @@ const TEMPLATE_OPTIONS = [
   { id: "professional", name: "Professional Template", description: "Traditional double-column layout for senior candidates.", bg: "from-slate-50 to-slate-100" },
   { id: "developer", name: "Developer Template", description: "Monospace typographic accent style optimized for tech.", bg: "from-slate-800 to-slate-900 text-white" },
   { id: "minimal", name: "Minimal Template", description: "Understated classic serif typographic layout.", bg: "from-zinc-50 to-zinc-100" },
-  { id: "classic", name: "Classic Developer", description: "ATS-friendly classic single-column serif layout with bold headings and right-aligned dates, identical to the Jake's Resume standard.", bg: "from-amber-50/50 to-orange-50/50" },
+  { id: "classic", name: "Classic Developer", description: "ATS-friendly classic single-column serif layout with bold headings.", bg: "from-amber-50/50 to-orange-50/50" },
 ]
-
-const renderTemplatePreview = (templateId: string, resumeJson: Record<string, any>) => {
-  const personalInfo = resumeJson?.personalInfo || {}
-  const fullName = personalInfo.fullName || "Your Name"
-  const email = personalInfo.email || "email@example.com"
-  const phone = personalInfo.phone || "123-456-7890"
-  
-  const summaryText = resumeJson?.summary?.text || ""
-  const isSummaryVisible = resumeJson?.summary?.visible !== false && summaryText
-  
-  const experienceList = resumeJson?.experience?.items || []
-  const educationList = resumeJson?.education?.items || []
-  const skillsList = resumeJson?.technicalSkills?.items || []
-  
-  const firstExp = experienceList[0] || {}
-  
-  switch (templateId) {
-    case "classic":
-      return (
-        <div className="w-full h-full bg-white p-3 flex flex-col gap-1 select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
-          {/* Header */}
-          <div className="text-center space-y-0.5">
-            <div className="font-bold text-[8px] tracking-tight uppercase text-slate-950">{fullName}</div>
-            <div className="flex justify-center gap-1.5 text-[4px] text-slate-500">
-              {email && <span>{email}</span>}
-              {phone && <span>• {phone}</span>}
-            </div>
-          </div>
-          <hr className="border-t border-slate-300 my-0.5" />
-          
-          {/* Summary */}
-          {isSummaryVisible && (
-            <div className="space-y-0.5">
-              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Professional Summary</div>
-              <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
-            </div>
-          )}
-          
-          {/* Experience */}
-          {experienceList.length > 0 && (
-            <div className="space-y-0.5">
-              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Professional Experience</div>
-              {experienceList.slice(0, 1).map((exp: any, i: number) => (
-                <div key={i} className="space-y-0.5">
-                  <div className="flex justify-between font-bold text-[4.5px] text-slate-850">
-                    <span>{exp.role || "Job Role"} at {exp.company || "Company"}</span>
-                    <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration || "Date"}</span>
-                  </div>
-                  <p className="text-[4px] text-slate-650 line-clamp-2 leading-snug">{exp.description || "Developed software solutions"}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Education */}
-          {educationList.length > 0 && (
-            <div className="space-y-0.5">
-              <div className="font-bold text-[5px] uppercase text-slate-900 tracking-wide border-b border-slate-100 pb-0.5">Education</div>
-              {educationList.slice(0, 1).map((edu: any, i: number) => (
-                <div key={i} className="flex justify-between items-center text-[4.5px]">
-                  <span className="font-bold text-slate-800">{edu.degree || "Degree"} — {edu.institution || "School"}</span>
-                  <span className="text-[3.5px] text-slate-400">{edu.year || "Year"}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )
-
-    case "professional":
-      return (
-        <div className="w-full h-full bg-white flex select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
-          {/* Left Column (Sidebar) */}
-          <div className="w-[32%] bg-slate-50 p-2.5 flex flex-col gap-2 border-r border-slate-100 h-full">
-            <div className="w-8 h-8 rounded-full bg-indigo-100/80 mx-auto flex items-center justify-center font-bold text-[8px] text-indigo-700">
-              {fullName.charAt(0) || "U"}
-            </div>
-            
-            <div className="space-y-0.5 text-center">
-              <div className="font-bold text-[4.5px] text-slate-800 truncate">{fullName}</div>
-              <div className="text-[3.5px] text-slate-500 truncate">{email}</div>
-            </div>
-
-            {skillsList.length > 0 && (
-              <div className="space-y-1">
-                <div className="font-bold text-[4.5px] text-slate-900 border-b pb-0.5 uppercase tracking-wider">Skills</div>
-                <div className="flex flex-wrap gap-0.5">
-                  {skillsList.slice(0, 4).map((skill: any, i: number) => (
-                    <span key={i} className="bg-slate-200 text-slate-700 px-1 py-0.5 rounded-[2px] text-[3.5px]">
-                      {skill.skills?.split(",")[0] || skill.category}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* Right Column (Content) */}
-          <div className="w-[68%] p-2.5 flex flex-col gap-2.5">
-            {isSummaryVisible && (
-              <div className="space-y-0.5">
-                <div className="font-bold text-[5px] text-indigo-600 uppercase tracking-wide border-b pb-0.5">Profile Summary</div>
-                <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
-              </div>
-            )}
-            
-            {experienceList.length > 0 && (
-              <div className="space-y-1">
-                <div className="font-bold text-[5px] text-indigo-600 uppercase tracking-wide border-b pb-0.5">Experience</div>
-                {experienceList.slice(0, 1).map((exp: any, i: number) => (
-                  <div key={i} className="space-y-0.5">
-                    <div className="flex justify-between font-bold text-[4.5px] text-slate-855">
-                      <span>{exp.role}</span>
-                      <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration}</span>
-                    </div>
-                    <div className="text-[4px] text-slate-500 font-semibold">{exp.company}</div>
-                    <p className="text-[4px] text-slate-650 line-clamp-2 leading-snug">{exp.description}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )
-
-    case "developer":
-      return (
-        <div className="w-full h-full bg-slate-950 p-3 flex flex-col gap-1 select-none text-[4.5px] leading-[1.2] text-emerald-400 font-mono shadow-inner">
-          <div className="flex justify-between items-center text-slate-600 border-b border-slate-900 pb-0.5 mb-0.5 text-[3.5px]">
-            <span>bash</span><span>● ✖ 💻</span>
-          </div>
-          <div>
-            <span className="text-blue-400">~/resume $</span> cat info.json
-          </div>
-          <div className="text-slate-300 pl-2 whitespace-pre-wrap">
-            {`{\n  "name": "${fullName}",\n  "target": "${firstExp.role || "Developer"}"\n}`}
-          </div>
-          <div className="mt-1">
-            <span className="text-blue-400">~/resume $</span> cat skills.list
-          </div>
-          <div className="text-slate-400 pl-2 line-clamp-2">
-            {skillsList.map((s: any) => s.skills).join(", ") || "React, Node.js, Express, MongoDB"}
-          </div>
-        </div>
-      )
-
-    case "minimal":
-      return (
-        <div className="w-full h-full bg-white p-3 flex flex-col gap-1.5 select-none text-[5px] leading-[1.3] text-zinc-800 font-serif shadow-inner">
-          <div className="text-center my-0.5">
-            <div className="font-bold text-[8.5px] italic text-zinc-955">{fullName}</div>
-            <div className="text-[4px] text-zinc-500 italic">{firstExp.role || "Professional Candidate"}</div>
-          </div>
-          
-          {isSummaryVisible && (
-            <div className="space-y-0.5 text-center">
-              <p className="text-[4px] leading-relaxed text-zinc-655 line-clamp-2 italic px-2">"{summaryText}"</p>
-            </div>
-          )}
-          
-          <hr className="border-t border-zinc-200" />
-          
-          {experienceList.length > 0 && (
-            <div className="space-y-0.5">
-              <div className="font-semibold text-[4.5px] uppercase tracking-wider text-zinc-500 text-center">Experience</div>
-              {experienceList.slice(0, 1).map((exp: any, i: number) => (
-                <div key={i} className="space-y-0.5">
-                  <div className="flex justify-between font-semibold text-[4.5px] text-zinc-900">
-                    <span>{exp.role} at {exp.company}</span>
-                    <span className="text-[3.5px] text-zinc-400 font-normal">{exp.duration}</span>
-                  </div>
-                  <p className="text-[4px] text-zinc-655 line-clamp-2 leading-relaxed">{exp.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )
-
-    case "modern":
-    default:
-      return (
-        <div className="w-full h-full bg-white p-3 flex flex-col gap-1.5 select-none text-[5px] leading-[1.2] text-slate-800 font-sans shadow-inner">
-          {/* Header */}
-          <div className="space-y-0.5">
-            <div className="font-bold text-[8.5px] text-indigo-600 tracking-tight">{fullName}</div>
-            <div className="text-[4px] text-slate-450 font-semibold">{firstExp.role || "Software Engineer"}</div>
-            <div className="h-0.5 bg-indigo-500 rounded w-full mt-0.5" />
-          </div>
-          
-          {/* Summary */}
-          {isSummaryVisible && (
-            <div className="space-y-0.5">
-              <div className="font-bold text-[4.5px] text-indigo-500 uppercase tracking-wide">Summary</div>
-              <p className="text-[4px] text-slate-650 line-clamp-2 leading-relaxed">{summaryText}</p>
-            </div>
-          )}
-          
-          {/* Experience */}
-          {experienceList.length > 0 && (
-            <div className="space-y-0.5">
-              <div className="font-bold text-[4.5px] text-indigo-500 uppercase tracking-wide">Experience</div>
-              {experienceList.slice(0, 1).map((exp: any, i: number) => (
-                <div key={i} className="space-y-0.5">
-                  <div className="flex justify-between font-bold text-[4.5px] text-slate-850">
-                    <span>{exp.role} at {exp.company}</span>
-                    <span className="text-[3.5px] text-slate-400 font-normal">{exp.duration}</span>
-                  </div>
-                  <p className="text-[4px] text-slate-655 line-clamp-2 leading-snug">{exp.description}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )
-  }
-}
 
 export default function ResumeDashboardPage() {
   const router = useRouter()
   const [resumes, setResumes] = useState<Resume[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [tags, setTags] = useState<TagType[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  
-  // Search & Filter state
+
+  // Search & Filters state
   const [search, setSearch] = useState("")
   const [filterTemplate, setFilterTemplate] = useState("all")
   const [filterFavorite, setFilterFavorite] = useState("all")
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("updatedAt")
   const [sortOrder, setSortOrder] = useState("desc")
 
-  // Create wizard state
+  // Create wizard states
   const [createOpen, setCreateOpen] = useState(false)
   const [wizardStep, setWizardStep] = useState(2)
   const [selectedTemplate, setSelectedTemplate] = useState("classic")
   const [newResumeTitle, setNewResumeTitle] = useState("")
   const [creating, setCreating] = useState(false)
 
-  // Actions states
+  // Folder & Tag Modal states
+  const [folderOpen, setFolderOpen] = useState(false)
+  const [newFolderName, setNewFolderName] = useState("")
+  const [tagOpen, setTagOpen] = useState(false)
+  const [newTagName, setNewTagName] = useState("")
+
+  // Rename states
   const [renameOpen, setRenameOpen] = useState(false)
   const [renameResumeId, setRenameResumeId] = useState("")
   const [renameTitle, setRenameTitle] = useState("")
   const [renaming, setRenaming] = useState(false)
 
+  // Delete states
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteResumeId, setDeleteResumeId] = useState("")
   const [deleting, setDeleting] = useState(false)
 
+  // Import file states
+  const [importOpen, setImportOpen] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importFileText, setImportFileText] = useState("")
+  const [importFileName, setImportFileName] = useState("")
+
+  const loadFoldersAndTags = async () => {
+    try {
+      const [foldersRes, tagsRes] = await Promise.all([
+        fetch("/api/folders?type=resume"),
+        fetch("/api/tags?type=resume"),
+      ])
+      if (foldersRes.ok) setFolders(await foldersRes.json())
+      if (tagsRes.ok) setTags(await tagsRes.json())
+    } catch (e) {
+      console.error("Failed to load folder/tag lists:", e)
+    }
+  }
+
   const loadResumes = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (search) params.append("search", search)
-      if (filterTemplate !== "all") params.append("templateId", filterTemplate)
-      if (filterFavorite === "favorite") params.append("isFavorite", "true")
-      params.append("sortBy", sortBy)
-      params.append("sortOrder", sortOrder)
-
-      const res = await fetch(`/api/resumes?${params.toString()}`)
+      const res = await fetch("/api/resumes")
       if (res.ok) {
         const data = await res.json()
         setResumes(data)
@@ -334,13 +164,93 @@ export default function ResumeDashboardPage() {
     }
   }
 
-  // Refetch when search/filter/sort parameters change
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
+    loadFoldersAndTags()
+    loadResumes()
+  }, [])
+
+  // Create folder
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return
+    try {
+      const res = await fetch("/api/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newFolderName.trim(), type: "resume" }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setFolders([...folders, data])
+        setNewFolderName("")
+        setFolderOpen(false)
+        toast.success("Folder created successfully")
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // Create tag
+  const handleCreateTag = async () => {
+    if (!newTagName.trim()) return
+    try {
+      const res = await fetch("/api/tags", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newTagName.trim(), type: "resume" }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTags([...tags, data])
+        setNewTagName("")
+        setTagOpen(false)
+        toast.success("Tag created successfully")
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // Map Resume to Folder
+  const handleMoveToFolder = async (resumeId: string, folderId: string | null) => {
+    try {
+      if (folderId) {
+        await fetch(`/api/resumes/${resumeId}/folders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folderId }),
+        })
+      } else {
+        await fetch(`/api/resumes/${resumeId}/folders`, {
+          method: "DELETE",
+        })
+      }
+      toast.success("Folder placement updated")
       loadResumes()
-    }, 300)
-    return () => clearTimeout(delayDebounce)
-  }, [search, filterTemplate, filterFavorite, sortBy, sortOrder])
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // Toggle Tag mapping
+  const handleToggleTagMapping = async (resumeId: string, tagId: string, isMapped: boolean) => {
+    try {
+      if (!isMapped) {
+        await fetch(`/api/resumes/${resumeId}/tags`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tagId }),
+        })
+      } else {
+        await fetch(`/api/resumes/${resumeId}/tags?tagId=${tagId}`, {
+          method: "DELETE",
+        })
+      }
+      loadResumes()
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   // Handle favorite toggle
   const handleToggleFavorite = async (id: string, e: React.MouseEvent) => {
@@ -352,53 +262,13 @@ export default function ResumeDashboardPage() {
           prev.map((r) => (r.id === id ? { ...r, isFavorite: !r.isFavorite } : r))
         )
         toast.success("Favorite toggled")
-      } else {
-        toast.error("Failed to update favorite status")
       }
     } catch (error) {
       console.error(error)
-      toast.error("Error toggling favorite")
     }
   }
 
-  // Handle default toggle
-  const handleToggleDefault = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      const resume = resumes.find((r) => r.id === id)
-      if (!resume) return
-
-      const isMakingDefault = !resume.isDefault
-      if (isMakingDefault) {
-        const defaultCount = resumes.filter((r) => r.isDefault).length
-        if (defaultCount >= 5) {
-          toast.error("You can set a maximum of 5 resumes as default.")
-          return
-        }
-      }
-
-      const res = await fetch(`/api/resumes/${id}/default`, { method: "PUT" })
-      if (res.ok) {
-        setResumes((prev) =>
-          prev.map((r) => (r.id === id ? { ...r, isDefault: !r.isDefault } : r))
-        )
-        toast.success(isMakingDefault ? "Set as default resume" : "Removed default status")
-      } else {
-        const errText = await res.text()
-        try {
-          const parsed = JSON.parse(errText)
-          toast.error(parsed.error || "Failed to update default status")
-        } catch {
-          toast.error("Failed to update default status")
-        }
-      }
-    } catch (error) {
-      console.error(error)
-      toast.error("Error toggling default status")
-    }
-  }
-
-  // Create new resume wizard execution
+  // Wizard creation
   const handleCreateResume = async () => {
     if (!newResumeTitle.trim()) {
       toast.error("Resume name is required")
@@ -420,12 +290,9 @@ export default function ResumeDashboardPage() {
         toast.success("Resume created successfully!")
         setCreateOpen(false)
         router.push(`/resumes/${data.id}/edit`)
-      } else {
-        toast.error("Failed to create resume")
       }
     } catch (error) {
       console.error(error)
-      toast.error("Error creating resume")
     } finally {
       setCreating(false)
     }
@@ -437,382 +304,737 @@ export default function ResumeDashboardPage() {
       const res = await fetch(`/api/resumes/${id}/duplicate`, { method: "POST" })
       if (res.ok) {
         const data = await res.json()
-        setResumes((prev) => [data, ...prev])
+        setResumes([data, ...resumes])
         toast.success("Resume duplicated successfully")
-      } else {
-        toast.error("Failed to duplicate resume")
       }
     } catch (error) {
       console.error(error)
-      toast.error("Error duplicating resume")
     }
   }
 
   // Rename resume
   const handleRename = async () => {
-    if (!renameTitle.trim()) {
-      toast.error("Title cannot be empty")
-      return
-    }
+    if (!renameTitle.trim()) return
     try {
       setRenaming(true)
-      const res = await fetch(`/api/resumes/${renameResumeId}/rename`, {
+      const res = await fetch(`/api/resumes/${renameResumeId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: renameTitle.trim() }),
       })
-
       if (res.ok) {
         setResumes((prev) =>
           prev.map((r) => (r.id === renameResumeId ? { ...r, title: renameTitle.trim() } : r))
         )
-        toast.success("Resume renamed")
         setRenameOpen(false)
-      } else {
-        toast.error("Failed to rename")
+        toast.success("Resume renamed successfully")
       }
     } catch (error) {
       console.error(error)
-      toast.error("Error renaming")
     } finally {
       setRenaming(false)
     }
   }
 
-  // Delete resume (soft delete)
+  // Delete resume
   const handleDelete = async () => {
     try {
       setDeleting(true)
       const res = await fetch(`/api/resumes/${deleteResumeId}`, { method: "DELETE" })
       if (res.ok) {
         setResumes((prev) => prev.filter((r) => r.id !== deleteResumeId))
-        toast.success("Resume deleted")
         setDeleteOpen(false)
-      } else {
-        toast.error("Failed to delete")
+        toast.success("Resume deleted")
       }
     } catch (error) {
       console.error(error)
-      toast.error("Error deleting")
     } finally {
       setDeleting(false)
     }
   }
 
-  const openRenameDialog = (id: string, currentTitle: string) => {
-    setRenameResumeId(id)
-    setRenameTitle(currentTitle)
-    setRenameOpen(true)
+  // Parse file import
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImportFileName(file.name)
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      const text = evt.target?.result as string
+      setImportFileText(text)
+    }
+    reader.readAsText(file)
   }
 
-  const openDeleteDialog = (id: string) => {
-    setDeleteResumeId(id)
-    setDeleteOpen(true)
+  const triggerImportSubmit = async () => {
+    if (!importFileText) {
+      toast.error("Please upload a file first")
+      return
+    }
+
+    try {
+      setImporting(true)
+      const res = await fetch("/api/resumes/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileText: importFileText, fileName: importFileName }),
+      })
+
+      if (res.ok) {
+        const parsedJson = await res.json()
+        // Save as new resume
+        const createRes = await fetch("/api/resumes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: importFileName.replace(/\.[^/.]+$/, "") + " (Imported)",
+            templateId: "classic",
+          }),
+        })
+
+        if (createRes.ok) {
+          const newResData = await createRes.json()
+          // Update its JSON
+          await fetch(`/api/resumes/${newResData.id}/autosave`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resumeJson: parsedJson }),
+          })
+
+          toast.success("Resume imported successfully!")
+          setImportOpen(false)
+          router.push(`/resumes/${newResData.id}/edit`)
+        }
+      } else {
+        toast.error("Failed to parse resume content")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to import resume")
+    } finally {
+      setImporting(false)
+    }
   }
 
-  const startCreateWizard = () => {
-    setWizardStep(2)
-    setNewResumeTitle("")
-    setCreateOpen(true)
-  }
+  // Filter & Sort resumes locally for super-fast client feedback
+  const filteredResumes = resumes
+    .filter((res) => {
+      const matchesSearch =
+        res.title.toLowerCase().includes(search.toLowerCase()) ||
+        res.templateId.toLowerCase().includes(search.toLowerCase())
+      const matchesTemplate = filterTemplate === "all" || res.templateId === filterTemplate
+      const matchesFav = filterFavorite === "all" || (filterFavorite === "favorite" && res.isFavorite)
+      const matchesFolder = !selectedFolderId || res.folder?.id === selectedFolderId
+      const matchesTags =
+        selectedTagIds.length === 0 ||
+        selectedTagIds.every((tagId) => res.tags.some((t) => t.id === tagId))
+
+      return matchesSearch && matchesTemplate && matchesFav && matchesFolder && matchesTags
+    })
+    .sort((a: any, b: any) => {
+      let valA = a[sortBy]
+      let valB = b[sortBy]
+      if (sortBy === "updatedAt" || sortBy === "createdAt") {
+        valA = new Date(valA).getTime()
+        valB = new Date(valB).getTime()
+      } else {
+        valA = String(valA).toLowerCase()
+        valB = String(valB).toLowerCase()
+      }
+
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1
+      return 0
+    })
 
   return (
-    <>
-      <PageHeader title="Resume Management" description="Create and organize highly customizable, schema-driven resumes">
-        <Button onClick={startCreateWizard} className="cursor-pointer gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md">
-          <Plus className="h-4 w-4" /> Create Resume
-        </Button>
+    <div className="space-y-6">
+      <PageHeader
+        title="Resume & Versions Ecosystem"
+        description="Create, version-control, and tag multiple professional resumes tailored for specific job designations"
+      >
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="h-9 text-xs gap-1.5 cursor-pointer">
+            <Upload className="h-4 w-4" /> Import Resume
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="h-9 text-xs gap-1.5 cursor-pointer bg-primary text-white">
+            <Plus className="h-4 w-4" /> Create Resume
+          </Button>
+        </div>
       </PageHeader>
 
-      <div className="space-y-6">
-        {/* Filters and Layout controls */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card p-4 rounded-xl border shadow-sm">
-          {/* Search bar */}
-          <div className="relative w-full md:max-w-xs">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search resumes..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Filters select */}
-          <div className="flex flex-wrap gap-2 w-full md:w-auto items-center justify-end">
-
-            <Select value={filterFavorite} onValueChange={setFilterFavorite}>
-              <SelectTrigger className="w-[130px] cursor-pointer">
-                <SelectValue placeholder="Scope" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Resumes</SelectItem>
-                <SelectItem value="favorite">Favorites</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] cursor-pointer">
-                <SelectValue placeholder="Sort By" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="updatedAt">Last Updated</SelectItem>
-                <SelectItem value="title">Alphabetical</SelectItem>
-                <SelectItem value="createdAt">Created Date</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* View switcher */}
-            <div className="flex border rounded-lg overflow-hidden shrink-0">
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-                className="rounded-none cursor-pointer h-9 w-9"
-              >
-                <Grid className="h-4 w-4" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-4">
+        {/* Left Side: Folder & Tags Management */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Folders Section */}
+          <Card className="shadow-sm border-slate-100">
+            <CardHeader className="pb-3 border-b flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <FolderOpen className="h-4 w-4 text-indigo-500" /> Folders
+              </CardTitle>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setFolderOpen(true)}>
+                <Plus className="h-3.5 w-3.5 text-slate-650" />
               </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("list")}
-                className="rounded-none cursor-pointer h-9 w-9"
+            </CardHeader>
+            <CardContent className="pt-3 px-2 space-y-1">
+              <button
+                onClick={() => setSelectedFolderId(null)}
+                className={`w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg font-medium transition-colors ${
+                  !selectedFolderId ? "bg-indigo-50 text-indigo-700 font-bold" : "hover:bg-slate-50 text-slate-700"
+                }`}
               >
-                <ListIcon className="h-4 w-4" />
+                <span>All Resumes</span>
+                <Badge variant="secondary" className="text-[10px] scale-90">{resumes.length}</Badge>
+              </button>
+
+              {folders.map((folder) => {
+                const count = resumes.filter((r) => r.folder?.id === folder.id).length
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => setSelectedFolderId(folder.id)}
+                    className={`w-full flex items-center justify-between text-xs px-3 py-2 rounded-lg font-medium transition-colors ${
+                      selectedFolderId === folder.id ? "bg-indigo-50 text-indigo-700 font-bold" : "hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <span className="truncate pr-2">📁 {folder.name}</span>
+                    <Badge variant="secondary" className="text-[10px] scale-90">{count}</Badge>
+                  </button>
+                )
+              })}
+            </CardContent>
+          </Card>
+
+          {/* Tags Section */}
+          <Card className="shadow-sm border-slate-100">
+            <CardHeader className="pb-3 border-b flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Tag className="h-4 w-4 text-indigo-500" /> Tags
+              </CardTitle>
+              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setTagOpen(true)}>
+                <Plus className="h-3.5 w-3.5 text-slate-650" />
               </Button>
-            </div>
-          </div>
+            </CardHeader>
+            <CardContent className="pt-3 px-3">
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((tag) => {
+                  const isSelected = selectedTagIds.includes(tag.id)
+                  return (
+                    <button
+                      key={tag.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedTagIds(selectedTagIds.filter((id) => id !== tag.id))
+                        } else {
+                          setSelectedTagIds([...selectedTagIds, tag.id])
+                        }
+                      }}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-full border transition-all ${
+                        isSelected
+                          ? "bg-indigo-650 border-indigo-650 text-white shadow-sm"
+                          : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"
+                      }`}
+                    >
+                      {tag.name}
+                    </button>
+                  )
+                })}
+
+                {tags.length === 0 && (
+                  <span className="text-xs text-slate-400">No tags created yet.</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Dashboard Content */}
-        {loading ? (
-          <AppLoader message="Retrieving your saved resumes" />
-        ) : resumes.length === 0 ? (
-          <Card className="text-center py-12 bg-muted/20 border-dashed">
-            <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+        {/* Right Side: Resumes Catalog Grid */}
+        <div className="lg:col-span-9 space-y-4">
+          {/* Filtering Header Panel */}
+          <Card className="shadow-sm border-slate-100">
+            <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search resumes by title..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 text-xs h-9.5"
+                />
               </div>
-              <CardTitle>No Resumes Found</CardTitle>
-              <CardDescription>
-                Create your first dynamic resume using our schema-driven editor.
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="justify-center">
-              <Button onClick={startCreateWizard} className="cursor-pointer">
-                Create First Resume
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : viewMode === "grid" ? (
-          /* Grid View */
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {resumes.map((resume) => (
-              <Card key={resume.id} className="group hover:shadow-md transition-all duration-300 relative overflow-hidden bg-card border flex flex-col justify-between">
-                <div>
-                  {/* Card Header Thumbnail Placeholder */}
-                  <div
-                    onClick={() => router.push(`/resumes/${resume.id}/edit`)}
-                    className="h-40 w-full bg-gradient-to-br from-blue-500/5 to-indigo-500/10 flex items-center justify-center border-b cursor-pointer group-hover:bg-primary/5 transition-colors relative"
-                  >                    {/* Default resume indicator */}
-                    {resume.isDefault && (
-                      <span className="absolute top-3 left-3 bg-indigo-600 text-white text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 z-10 animate-pulse">
-                        <Sparkles className="h-2.5 w-2.5" /> Default
-                      </span>
-                    )}
 
-                    {/* Template placeholder preview visual */}
-                    <div className="w-full h-full group-hover:scale-[1.02] transition-transform duration-300">
-                      {renderTemplatePreview(resume.templateId, resume.resumeJson)}
-                    </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Select value={filterTemplate} onValueChange={setFilterTemplate}>
+                  <SelectTrigger className="w-[140px] text-xs h-9.5">
+                    <SelectValue placeholder="Template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">All Templates</SelectItem>
+                    {TEMPLATE_OPTIONS.map((t) => (
+                      <SelectItem key={t.id} value={t.id} className="text-xs">{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                    {/* Favorite toggle overlay */}
-                    <button
-                      onClick={(e) => handleToggleFavorite(resume.id, e)}
-                      className="absolute top-3 right-3 p-1.5 rounded-full bg-background/80 hover:bg-background border cursor-pointer transition-colors shadow-sm"
-                    >
-                      <Star className={`h-4 w-4 ${resume.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-slate-400"}`} />
-                    </button>
-                  </div>
+                <Select value={filterFavorite} onValueChange={setFilterFavorite}>
+                  <SelectTrigger className="w-[120px] text-xs h-9.5">
+                    <SelectValue placeholder="Favorites" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="text-xs">All Items</SelectItem>
+                    <SelectItem value="favorite" className="text-xs">Favorites Only</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                  <CardHeader className="pt-4 pb-2">
-                    <CardTitle className="text-base font-bold text-slate-800 line-clamp-1">{resume.title}</CardTitle>
-                    <CardDescription className="text-xs flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Updated {new Date(resume.updatedAt).toLocaleDateString()}
-                    </CardDescription>
-                  </CardHeader>
-                </div>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[130px] text-xs h-9.5">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="updatedAt" className="text-xs">Last Updated</SelectItem>
+                    <SelectItem value="createdAt" className="text-xs">Created Date</SelectItem>
+                    <SelectItem value="title" className="text-xs">Title Alphabetical</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <CardFooter className="pt-2 border-t flex justify-between items-center bg-slate-50/50">
-                  <Badge variant="outline" className="text-xs capitalize">{resume.templateId}</Badge>
-                  
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" className="cursor-pointer" onClick={() => router.push(`/resumes/${resume.id}/edit`)}>
-                      Edit
-                    </Button>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 cursor-pointer">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuItem onClick={() => openRenameDialog(resume.id, resume.title)} className="cursor-pointer">
-                          <Edit className="h-4 w-4 mr-2" /> Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicate(resume.id)} className="cursor-pointer">
-                          <Copy className="h-4 w-4 mr-2" /> Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => handleToggleDefault(resume.id, e)} className="cursor-pointer text-indigo-700 font-semibold focus:text-indigo-850">
-                          <Sparkles className={`h-4 w-4 mr-2 ${resume.isDefault ? "fill-indigo-600 text-indigo-600" : "text-indigo-550"}`} />
-                          {resume.isDefault ? "Remove Default" : "Mark as Default"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openDeleteDialog(resume.id)} className="text-destructive cursor-pointer">
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          /* List View */
-          <div className="border rounded-xl divide-y bg-card overflow-hidden shadow-sm">
-            {resumes.map((resume) => (
-              <div key={resume.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-4 min-w-0">
-                  <button onClick={(e) => handleToggleFavorite(resume.id, e)} className="cursor-pointer">
-                    <Star className={`h-5 w-5 ${resume.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`} />
-                  </button>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-slate-800 truncate cursor-pointer hover:underline flex items-center gap-2" onClick={() => router.push(`/resumes/${resume.id}/edit`)}>
-                      {resume.title}
-                      {resume.isDefault && (
-                        <Badge className="bg-indigo-600 hover:bg-indigo-600 text-[9px] h-4 font-bold uppercase py-0 px-1 shadow-sm flex items-center gap-0.5 animate-pulse text-white">
-                          <Sparkles className="h-2.5 w-2.5" /> Default
-                        </Badge>
-                      )}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3">
-                      <span className="capitalize">Template: {resume.templateId}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Updated {new Date(resume.updatedAt).toLocaleDateString()}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" className="cursor-pointer" onClick={() => router.push(`/resumes/${resume.id}/edit`)}>
-                    Open
+                <div className="flex border rounded-lg overflow-hidden h-9.5">
+                  <Button
+                    size="icon"
+                    variant={viewMode === "grid" ? "secondary" : "ghost"}
+                    onClick={() => setViewMode("grid")}
+                    className="h-full w-8.5 rounded-none cursor-pointer"
+                  >
+                    <Grid className="h-4 w-4 text-slate-650" />
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 cursor-pointer">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[160px]">
-                      <DropdownMenuItem onClick={() => openRenameDialog(resume.id, resume.title)} className="cursor-pointer">
-                        <Edit className="h-4 w-4 mr-2" /> Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(resume.id)} className="cursor-pointer">
-                        <Copy className="h-4 w-4 mr-2" /> Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => handleToggleDefault(resume.id, e)} className="cursor-pointer text-indigo-700 font-semibold focus:text-indigo-850">
-                        <Sparkles className={`h-4 w-4 mr-2 ${resume.isDefault ? "fill-indigo-600 text-indigo-600" : "text-indigo-550"}`} />
-                        {resume.isDefault ? "Remove Default" : "Mark as Default"}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => openDeleteDialog(resume.id)} className="text-destructive cursor-pointer">
-                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button
+                    size="icon"
+                    variant={viewMode === "list" ? "secondary" : "ghost"}
+                    onClick={() => setViewMode("list")}
+                    className="h-full w-8.5 rounded-none cursor-pointer"
+                  >
+                    <ListIcon className="h-4 w-4 text-slate-650" />
+                  </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </CardContent>
+          </Card>
+
+          {/* Resumes Grid/List Content */}
+          {loading ? (
+            <div className="py-24">
+              <AppLoader message="Retrieving user resumes and tag metadata" />
+            </div>
+          ) : filteredResumes.length === 0 ? (
+            <div className="text-center py-20 border border-dashed rounded-xl bg-slate-50/50">
+              <FileText className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-slate-700">No Resumes Found</h4>
+              <p className="text-xs text-slate-500 mt-1">Create a new resume or adjust your tag filters in the sidebar.</p>
+            </div>
+          ) : viewMode === "grid" ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {filteredResumes.map((res) => {
+                const dateStr = new Date(res.updatedAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+                return (
+                  <Card key={res.id} className="shadow-sm hover:shadow-md transition-all border border-slate-100 flex flex-col justify-between overflow-hidden relative group">
+                    <CardHeader className="pb-2 flex flex-row justify-between items-start space-y-0">
+                      <div className="min-w-0 pr-1">
+                        <CardTitle className="text-xs font-bold text-slate-800 truncate leading-relaxed">
+                          {res.title}
+                        </CardTitle>
+                        <CardDescription className="text-[10px] scale-95 mt-0.5 origin-left">
+                          Template: <span className="font-semibold text-slate-650 uppercase">{res.templateId}</span>
+                        </CardDescription>
+                      </div>
+
+                      <div className="flex gap-0.5">
+                        <button
+                          onClick={(e) => handleToggleFavorite(res.id, e)}
+                          className="p-1 hover:bg-slate-100 rounded-md transition-colors"
+                        >
+                          <Star className={`h-4.5 w-4.5 ${res.isFavorite ? "text-amber-500 fill-amber-500" : "text-slate-300"}`} />
+                        </button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 cursor-pointer">
+                              <MoreVertical className="h-4 w-4 text-slate-450" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="text-xs w-[160px]">
+                            <DropdownMenuItem className="cursor-pointer text-xs" asChild>
+                              <Link href={`/resumes/${res.id}/edit`}>
+                                <Edit className="h-3.5 w-3.5 mr-2" /> Open Editor
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer text-xs" onClick={() => handleDuplicate(res.id)}>
+                              <Copy className="h-3.5 w-3.5 mr-2" /> Duplicate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-xs"
+                              onClick={() => {
+                                setRenameResumeId(res.id)
+                                setRenameTitle(res.title)
+                                setRenameOpen(true)
+                              }}
+                            >
+                              <Edit className="h-3.5 w-3.5 mr-2" /> Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            
+                            {/* Folder Submenu */}
+                            <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Move to Folder</div>
+                            <DropdownMenuItem className="cursor-pointer text-xs pl-4" onClick={() => handleMoveToFolder(res.id, null)}>
+                              None (Root)
+                            </DropdownMenuItem>
+                            {folders.map((f) => (
+                              <DropdownMenuItem key={f.id} className="cursor-pointer text-xs pl-4" onClick={() => handleMoveToFolder(res.id, f.id)}>
+                                📁 {f.name}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+
+                            {/* Tags Toggle Submenu */}
+                            <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Toggle Tags</div>
+                            {tags.map((t) => {
+                              const isMapped = res.tags.some((tag) => tag.id === t.id)
+                              return (
+                                <DropdownMenuCheckboxItem
+                                  key={t.id}
+                                  checked={isMapped}
+                                  className="text-xs"
+                                  onCheckedChange={() => handleToggleTagMapping(res.id, t.id, isMapped)}
+                                >
+                                  {t.name}
+                                </DropdownMenuCheckboxItem>
+                              )
+                            })}
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                              className="cursor-pointer text-xs text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setDeleteResumeId(res.id)
+                                setDeleteOpen(true)
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </CardHeader>
+
+                    {/* Previews and tags display */}
+                    <CardContent className="py-2.5">
+                      <div className="h-36 w-full rounded border bg-slate-50 flex items-center justify-center overflow-hidden relative shadow-inner">
+                        <div className="absolute inset-0 bg-slate-900/5 group-hover:bg-transparent transition-all pointer-events-none z-10" />
+                        <div className="scale-[0.55] origin-center w-full h-full flex items-center justify-center">
+                          <FileText className="h-12 w-12 text-slate-350" />
+                        </div>
+                      </div>
+                      
+                      {/* Meta Information */}
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {res.folder && (
+                          <Badge variant="outline" className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border-indigo-100 uppercase">
+                            📁 {res.folder.name}
+                          </Badge>
+                        )}
+                        {res.tags.slice(0, 2).map((t) => (
+                          <Badge key={t.id} variant="secondary" className="text-[9px] font-bold uppercase">
+                            {t.name}
+                          </Badge>
+                        ))}
+                        {res.tags.length > 2 && (
+                          <Badge variant="secondary" className="text-[9px]">
+                            +{res.tags.length - 2} more
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="pt-2 border-t flex justify-between items-center bg-slate-50/50 pb-3">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> Updated {dateStr}
+                      </span>
+                      <Button size="sm" variant="ghost" asChild className="h-7 text-xs font-bold text-primary cursor-pointer hover:bg-slate-100">
+                        <Link href={`/resumes/${res.id}/edit`}>
+                          Open <ChevronRight className="h-3 w-3 ml-0.5" />
+                        </Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                )
+              })}
+            </div>
+          ) : (
+            /* LIST VIEW MODE */
+            <Card className="shadow-sm border-slate-100">
+              <CardContent className="p-0">
+                <div className="divide-y text-xs">
+                  {filteredResumes.map((res) => {
+                    const dateStr = new Date(res.updatedAt).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
+                    return (
+                      <div key={res.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          <button
+                            onClick={(e) => handleToggleFavorite(res.id, e)}
+                            className="p-1 hover:bg-slate-100 rounded-md transition-colors"
+                          >
+                            <Star className={`h-4 w-4 ${res.isFavorite ? "text-amber-500 fill-amber-500" : "text-slate-300"}`} />
+                          </button>
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-800 block truncate">{res.title}</span>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+                              <span className="uppercase text-slate-500 font-semibold">{res.templateId} template</span>
+                              <span>•</span>
+                              <span>Updated {dateStr}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Folders/Tags in List Row */}
+                        <div className="hidden md:flex items-center gap-1.5 px-4 min-w-[200px]">
+                          {res.folder && (
+                            <Badge variant="outline" className="text-[9px] font-bold text-indigo-750 bg-indigo-50 border-indigo-100 uppercase">
+                              📁 {res.folder.name}
+                            </Badge>
+                          )}
+                          {res.tags.slice(0, 3).map((t) => (
+                            <Badge key={t.id} variant="secondary" className="text-[9px] font-bold uppercase">
+                              {t.name}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" asChild className="h-8 text-xs cursor-pointer">
+                            <Link href={`/resumes/${res.id}/edit`}>Edit</Link>
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 cursor-pointer">
+                                <MoreVertical className="h-4 w-4 text-slate-450" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="text-xs w-[160px]">
+                              <DropdownMenuItem className="cursor-pointer text-xs" onClick={() => handleDuplicate(res.id)}>
+                                <Copy className="h-3.5 w-3.5 mr-2" /> Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="cursor-pointer text-xs"
+                                onClick={() => {
+                                  setRenameResumeId(res.id)
+                                  setRenameTitle(res.title)
+                                  setRenameOpen(true)
+                                }}
+                              >
+                                <Edit className="h-3.5 w-3.5 mr-2" /> Rename
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="cursor-pointer text-xs text-destructive"
+                                onClick={() => {
+                                  setDeleteResumeId(res.id)
+                                  setDeleteOpen(true)
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
-      {/* CREATE RESUME DIALOG */}
+      {/* CREATE NEW RESUME WIZARD DIALOG */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create New Resume</DialogTitle>
-            <DialogDescription>
-              Name your new resume (it will use the default Classic Developer layout)
+            <DialogTitle className="flex items-center gap-2 text-md font-bold text-slate-800">
+              <Sparkles className="h-5 w-5 text-indigo-600 animate-pulse" />
+              Create Resume Wizard
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Configure name and layouts to generate a blank workspace.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Resume Name / Job Title Target</label>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Resume Name</Label>
               <Input
-                placeholder="e.g. Frontend Engineer - Stripe application"
+                placeholder="e.g. Kaushal Kant - Backend Engineer"
                 value={newResumeTitle}
                 onChange={(e) => setNewResumeTitle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateResume()}
-                className="h-11 text-sm"
-                autoFocus
+                className="text-xs"
               />
-              <p className="text-xs text-muted-foreground">Give your resume a descriptive name that targets a specific job or company.</p>
             </div>
-            <DialogFooter className="pt-4 border-t">
-              <Button variant="ghost" onClick={() => setCreateOpen(false)} className="cursor-pointer">Cancel</Button>
-              <Button onClick={handleCreateResume} disabled={creating} className="cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 text-white min-w-[120px]">
-                {creating ? "Creating..." : "Create & Edit"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* RENAME RESUME DIALOG */}
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Resume</DialogTitle>
-            <DialogDescription>Provide a new title for this resume</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              value={renameTitle}
-              onChange={(e) => setRenameTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleRename()}
-              autoFocus
-            />
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setRenameOpen(false)} className="cursor-pointer">Cancel</Button>
-              <Button onClick={handleRename} disabled={renaming} className="cursor-pointer">
-                {renaming ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700">Select Template Format</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
+                {TEMPLATE_OPTIONS.map((opt) => {
+                  const isSelected = selectedTemplate === opt.id
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setSelectedTemplate(opt.id)}
+                      className={`p-3 border rounded-lg text-left transition-all flex flex-col justify-between h-[100px] cursor-pointer ${
+                        isSelected ? "ring-2 ring-primary border-primary bg-indigo-50/10" : "hover:border-slate-300 border-slate-100"
+                      }`}
+                    >
+                      <span className="text-xs font-bold text-slate-800">{opt.name}</span>
+                      <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 leading-snug">{opt.description}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* DELETE CONFIRM DIALOG */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Resume</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this resume? This action will soft-delete the resume and remove it from your dashboard.
-            </DialogDescription>
-          </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)} className="cursor-pointer">Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting} className="cursor-pointer">
-              {deleting ? "Deleting..." : "Delete"}
+            <Button variant="outline" onClick={() => setCreateOpen(false)} className="text-xs cursor-pointer">Cancel</Button>
+            <Button onClick={handleCreateResume} disabled={creating} className="text-xs cursor-pointer bg-primary text-white">
+              {creating ? "Creating..." : "Create Resume"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+
+      {/* CREATE FOLDER DIALOG */}
+      <Dialog open={folderOpen} onOpenChange={setFolderOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New Folder</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-xs font-semibold">Folder Name</Label>
+            <Input
+              placeholder="e.g. Software Engineer"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              className="text-xs h-9"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFolderOpen(false)} className="text-xs">Cancel</Button>
+            <Button onClick={handleCreateFolder} className="text-xs">Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CREATE TAG DIALOG */}
+      <Dialog open={tagOpen} onOpenChange={setTagOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New Tag</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-xs font-semibold">Tag Name</Label>
+            <Input
+              placeholder="e.g. React"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              className="text-xs h-9"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTagOpen(false)} className="text-xs">Cancel</Button>
+            <Button onClick={handleCreateTag} className="text-xs">Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* RENAME DIALOG */}
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename Resume</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label className="text-xs font-semibold">New Title</Label>
+            <Input
+              value={renameTitle}
+              onChange={(e) => setRenameTitle(e.target.value)}
+              className="text-xs h-9"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameOpen(false)} className="text-xs">Cancel</Button>
+            <Button onClick={handleRename} disabled={renaming} className="text-xs">Rename</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DELETE DIALOG */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Resume</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this resume? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} className="text-xs">Cancel</Button>
+            <Button onClick={handleDelete} disabled={deleting} variant="destructive" className="text-xs">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* IMPORT DIALOG */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-md font-bold">
+              <Upload className="h-5 w-5 text-indigo-650" />
+              Import Resume File
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Upload JSON, TXT, PDF or DOCX file to extract personal info, skills and education detail automatically.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="border border-dashed rounded-lg p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors relative cursor-pointer">
+              <Upload className="h-8 w-8 text-slate-400 mb-2" />
+              <span className="text-xs text-slate-600 font-medium">Click to select files</span>
+              <span className="text-[10px] text-slate-400 mt-1">JSON, TXT, PDF, DOCX (Max 5MB)</span>
+              <input
+                type="file"
+                accept=".txt,.json,.pdf,.docx"
+                onChange={handleImportFile}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+
+            {importFileName && (
+              <div className="p-3 border rounded-lg bg-indigo-50/30 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-700 truncate pr-2">📄 {importFileName}</span>
+                <Badge className="bg-indigo-600 text-white font-bold">Ready</Badge>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportOpen(false)} className="text-xs">Cancel</Button>
+            <Button onClick={triggerImportSubmit} disabled={importing || !importFileText} className="text-xs bg-indigo-605 text-white">
+              {importing ? "Importing..." : "Parse & Import"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

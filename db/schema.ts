@@ -464,3 +464,221 @@ export const tblAiHistory = pgTable(
     resumeIdIdx: index("ai_history_resume_id_idx").on(table.resumeId),
   })
 )
+
+// ----------------------------------------------------
+// RESUME ECOSYSTEM TABLES (PHASE 2)
+// ----------------------------------------------------
+
+export const resumeFolders = pgTable("resume_folders", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const resumeTags = pgTable("resume_tags", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const resumeFolderMappings = pgTable("resume_folder_mapping", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  folderId: text("folder_id")
+    .notNull()
+    .references(() => resumeFolders.id, { onDelete: "cascade" }),
+})
+
+export const resumeTagMappings = pgTable("resume_tag_mapping", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  tagId: text("tag_id")
+    .notNull()
+    .references(() => resumeTags.id, { onDelete: "cascade" }),
+})
+
+export const resumeVersions = pgTable("resume_versions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  versionName: text("version_name").notNull(),
+  resumeJson: jsonb("resume_json").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const resumeContentLibrary = pgTable("resume_content_library", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  contentType: text("content_type").notNull(), // 'summary' | 'objective' | 'project' | 'achievement' | 'skill' | 'certificate' | 'experience'
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const coverLetterFolders = pgTable("cover_letter_folders", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const coverLetterTags = pgTable("cover_letter_tags", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const coverLetterFolderMappings = pgTable("cover_letter_folder_mapping", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  coverLetterId: text("cover_letter_id")
+    .notNull()
+    .references(() => tblCoverLetters.id, { onDelete: "cascade" }),
+  folderId: text("folder_id")
+    .notNull()
+    .references(() => coverLetterFolders.id, { onDelete: "cascade" }),
+})
+
+export const coverLetterTagMappings = pgTable("cover_letter_tag_mapping", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  coverLetterId: text("cover_letter_id")
+    .notNull()
+    .references(() => tblCoverLetters.id, { onDelete: "cascade" }),
+  tagId: text("tag_id")
+    .notNull()
+    .references(() => coverLetterTags.id, { onDelete: "cascade" }),
+})
+
+export const coverLetterVersions = pgTable("cover_letter_versions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  coverLetterId: text("cover_letter_id")
+    .notNull()
+    .references(() => tblCoverLetters.id, { onDelete: "cascade" }),
+  versionName: text("version_name").notNull(),
+  coverLetterText: text("cover_letter_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const coverLetterTemplates = pgTable("cover_letter_templates", {
+  id: text("id").primaryKey(), // 'professional' | 'modern' | 'corporate' | 'minimal' | 'formal' | 'startup' | 'executive'
+  name: text("name").notNull(),
+  description: text("description"),
+  recommendedUse: text("recommended_use"),
+})
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  messages: jsonb("messages").notNull().default([]), // array of {role: 'user'|'assistant', content: string}
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const aiResumeReports = pgTable("ai_resume_reports", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  jobDescriptionId: text("job_description_id"),
+  matchScore: integer("match_score").notNull(),
+  atsScore: integer("ats_score").notNull(),
+  keywordMatchPercent: integer("keyword_match_percent").notNull(),
+  technicalMatchPercent: integer("technical_match_percent").notNull(),
+  experienceMatchPercent: integer("experience_match_percent").notNull(),
+  skillsMatchPercent: integer("skills_match_percent").notNull(),
+  educationMatchPercent: integer("education_match_percent").notNull(),
+  atsReportJson: jsonb("ats_report_json").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const atsReports = pgTable("ats_reports", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  atsScore: integer("ats_score").notNull(),
+  reportJson: jsonb("report_json").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const careerRoadmaps = pgTable("career_roadmaps", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  targetRole: text("target_role").notNull(),
+  roadmapJson: jsonb("roadmap_json").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const resumeImprovements = pgTable("resume_improvements", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  resumeId: text("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  sectionId: text("section_id").notNull(),
+  originalContent: text("original_content").notNull(),
+  suggestedContent: text("suggested_content").notNull(),
+  status: text("status").default("pending").notNull(), // 'pending' | 'accepted' | 'rejected'
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const coverLetterHistory = pgTable("cover_letter_history", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  companyName: text("company_name").notNull(),
+  jobRole: text("job_role").notNull(),
+  coverLetterText: text("cover_letter_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const jobDescriptionLibrary = pgTable("job_description_library", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  company: text("company").notNull(),
+  descriptionText: text("description_text").notNull(),
+  isFavorite: boolean("is_favorite").default(false).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+
+export const aiSavedPrompts = pgTable("ai_saved_prompts", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  promptText: text("prompt_text").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
+})
+

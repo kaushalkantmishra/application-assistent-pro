@@ -38,7 +38,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
-      router.push("/")
+      if (session.user.email === "kaushalkantmishra127@gmail.com") {
+        router.push("/admin")
+      } else {
+        router.push("/")
+      }
     }
   }, [status, session, router])
 

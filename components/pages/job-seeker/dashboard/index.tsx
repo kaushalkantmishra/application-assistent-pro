@@ -123,45 +123,45 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase">Resumes Built</CardTitle>
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Resumes Built</CardTitle>
             <FileText className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">{resumes.length}</div>
-            <p className="text-[10px] text-slate-400 mt-1">Ready for custom target applications</p>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{resumes.length}</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Ready for custom target applications</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase">Cover Letters</CardTitle>
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Cover Letters</CardTitle>
             <Mail className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">{coverLetters.length}</div>
-            <p className="text-[10px] text-slate-400 mt-1">Tailored using generative AI models</p>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{coverLetters.length}</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Tailored using generative AI models</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase">Connected Profiles</CardTitle>
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Connected Profiles</CardTitle>
             <Code className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">{codingProfiles.length} / 10</div>
-            <p className="text-[10px] text-slate-400 mt-1">Developer identities centralized</p>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{codingProfiles.length} / 10</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Developer identities centralized</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-bold text-slate-500 uppercase">Completed Guides</CardTitle>
+            <CardTitle className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Completed Guides</CardTitle>
             <BookOpen className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-800">{completedGuidesCount}</div>
-            <p className="text-[10px] text-slate-400 mt-1">DSA, Systems and HR materials read</p>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">{completedGuidesCount}</div>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">DSA, Systems and HR materials read</p>
           </CardContent>
         </Card>
       </div>
@@ -169,21 +169,21 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Readiness Index & Action Hub */}
         <div className="lg:col-span-4 space-y-6">
-          <Card className="shadow-sm border-indigo-150 bg-indigo-50/5 relative overflow-hidden">
+          <Card className="shadow-sm border-indigo-150 dark:border-indigo-900 bg-indigo-50/5 dark:bg-indigo-950/10 relative overflow-hidden">
             <div className="absolute right-[-20px] top-[-20px] w-28 h-28 bg-indigo-100/30 rounded-full blur-2xl" />
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-indigo-650" /> Career Readiness Index</CardTitle>
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-indigo-650 dark:text-indigo-400" /> Career Readiness Index</CardTitle>
               <CardDescription className="text-xs">Aggregate rating of your profile strength & materials study status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-indigo-750">{readinessScore}%</span>
+                <span className="text-2xl font-bold text-indigo-750 dark:text-indigo-300">{readinessScore}%</span>
                 <Badge className="bg-indigo-600 text-white font-bold text-[9px] uppercase">
                   {readinessScore >= 80 ? "Excellent" : readinessScore >= 50 ? "Moderate" : "Beginner"}
                 </Badge>
               </div>
-              <Progress value={readinessScore} className="h-2 bg-indigo-100" />
-              <p className="text-[10px] text-indigo-650/80 leading-relaxed mt-2">
+              <Progress value={readinessScore} className="h-2 bg-indigo-100 dark:bg-indigo-950" />
+              <p className="text-[10px] text-indigo-650/80 dark:text-indigo-300/80 leading-relaxed mt-2">
                 Connect your Github, Leetcode, and LinkedIn accounts and complete at least 2 study guides to score above 80%.
               </p>
             </CardContent>
@@ -242,12 +242,12 @@ export default function Dashboard() {
               ].map(item => {
                 const connected = codingProfiles.some(p => p.provider === item.id)
                 return (
-                  <div key={item.id} className="p-3 border rounded-lg bg-slate-50/30 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">{item.label}</span>
+                  <div key={item.id} className="p-3 border rounded-lg bg-slate-50/30 dark:bg-slate-900/30 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-350">{item.label}</span>
                     {connected ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-605 fill-emerald-50 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-605 fill-emerald-50 dark:fill-emerald-950 shrink-0" />
                     ) : (
-                      <AlertCircle className="h-4 w-4 text-slate-350 shrink-0" />
+                      <AlertCircle className="h-4 w-4 text-slate-400 dark:text-slate-500 shrink-0" />
                     )}
                   </div>
                 )
@@ -265,12 +265,12 @@ export default function Dashboard() {
               {resumes.length > 0 || coverLetters.length > 0 ? (
                 <div className="space-y-2.5">
                   {resumes.slice(0, 2).map(r => (
-                    <div key={r.id} className="p-3 border rounded-lg flex items-center justify-between hover:bg-slate-50/30 transition-colors">
+                    <div key={r.id} className="p-3 border rounded-lg flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-indigo-500" />
                         <div>
-                          <div className="text-xs font-bold text-slate-800">{r.title}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Updated {new Date(r.updatedAt).toLocaleDateString()}</div>
+                          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{r.title}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Updated {new Date(r.updatedAt).toLocaleDateString()}</div>
                         </div>
                       </div>
                       <Button asChild size="sm" variant="ghost" className="h-7 text-xs cursor-pointer pl-2">
@@ -279,12 +279,12 @@ export default function Dashboard() {
                     </div>
                   ))}
                   {coverLetters.slice(0, 2).map(cl => (
-                    <div key={cl.id} className="p-3 border rounded-lg flex items-center justify-between hover:bg-slate-50/30 transition-colors">
+                    <div key={cl.id} className="p-3 border rounded-lg flex items-center justify-between hover:bg-slate-50/30 dark:hover:bg-slate-900/30 transition-colors">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-emerald-500" />
                         <div>
-                          <div className="text-xs font-bold text-slate-800">{cl.jobRole || "Open Position"} - {cl.companyName || "Company"}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">Generated {new Date(cl.createdAt).toLocaleDateString()}</div>
+                          <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{cl.jobRole || "Open Position"} - {cl.companyName || "Company"}</div>
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Generated {new Date(cl.createdAt).toLocaleDateString()}</div>
                         </div>
                       </div>
                       <Button asChild size="sm" variant="ghost" className="h-7 text-xs cursor-pointer pl-2">
@@ -294,8 +294,8 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-xs text-slate-400 border border-dashed rounded-lg bg-slate-50/10">
-                  <FileText className="h-8 w-8 text-slate-350 mx-auto mb-2 animate-pulse" />
+                <div className="text-center py-8 text-xs text-slate-400 dark:text-slate-500 border border-dashed rounded-lg bg-slate-50/10 dark:bg-slate-900/10">
+                  <FileText className="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2 animate-pulse" />
                   No documents found. Start by creating a resume or cover letter.
                 </div>
               )}

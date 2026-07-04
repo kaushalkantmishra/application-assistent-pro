@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ChatRepository } from "@/repositories/chat.repository"
+import { callGemini } from "@/services/ai/gemini"
 
 const jobResponses = {
   resume: "Focus on quantifiable achievements, use action verbs, and tailor your resume to each job. Keep it to 1-2 pages and include relevant keywords from the job description.",
@@ -47,34 +48,10 @@ export async function POST(request: NextRequest) {
     // Try Gemini API first
     if (process.env.GEMINI_API_KEY) {
       try {
-        const apiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: message
-              }]
-            }],
-            generationConfig: {
-              maxOutputTokens: 300,
-            }
-          }),
-        })
-
-        if (apiResponse.ok) {
-          const data = await apiResponse.json()
-          const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text
-          if (aiResponse) {
-            response = aiResponse
-          }
-        } else {
-          console.log("Gemini API returned status:", apiResponse.status)
-        }
+        const systemInstruction = "You are a professional career coach and AI assistant for the Application Assistant Pro platform. Assist the user with resumes, cover letters, interviews, applications, and general career advice. Keep responses concise, friendly, clear, and action-oriented.";
+        response = await callGemini(message, systemInstruction);
       } catch (error) {
-        console.log("Gemini API unavailable, using fallback")
+        console.error("Gemini API unavailable in Chat API, using fallback:", error)
       }
     }
 

@@ -12,7 +12,7 @@ import { AppLoader } from "@/components/app-loader"
 
 interface RoleGuardProps {
   children: React.ReactNode
-  allowedRoles: ("user" | "interviewer")[]
+  allowedRoles: ("user" | "interviewer" | "admin" | "job_seeker")[]
   fallbackMessage?: string
 }
 

@@ -44,8 +44,14 @@ export default function ApplicationsPage() {
         fetch("/api/applications")
             .then((res) => res.json())
             .then((data) => {
-                setApplications(data)
-                setFilteredApplications(data)
+                if (Array.isArray(data)) {
+                    setApplications(data)
+                    setFilteredApplications(data)
+                } else {
+                    console.error("Failed to load applications array:", data)
+                    setApplications([])
+                    setFilteredApplications([])
+                }
                 setLoading(false)
             })
             .catch((err) => {

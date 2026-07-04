@@ -8,29 +8,30 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Save, Upload, X, Plus } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Save, X, Plus, Github, Linkedin, Globe, Code, Mail, Phone, MapPin, Briefcase, FileText } from "lucide-react"
 import { AppLoader } from "@/components/app-loader"
+import { toast } from "sonner"
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [newSkill, setNewSkill] = useState("")
-  const [newRole, setNewRole] = useState("")
-  const [newCompany, setNewCompany] = useState("")
   const [newLocation, setNewLocation] = useState("")
+  const [newLanguage, setNewLanguage] = useState("")
 
-  useEffect(() => {
+  const fetchProfile = () => {
+    setLoading(true)
     fetch("/api/users/profile")
       .then((res) => res.json())
       .then((data) => {
-        // Ensure arrays are initialized
         setProfile({
           ...data,
           skills: data.skills || [],
-          preferredRoles: data.preferredRoles || [],
-          preferredCompanies: data.preferredCompanies || [],
           preferredLocations: data.preferredLocations || [],
+          languages: data.languages || [],
+          yearsOfExperience: data.yearsOfExperience ?? 0,
         })
         setLoading(false)
       })
@@ -38,6 +39,10 @@ export default function ProfilePage() {
         console.error("Failed to load profile:", err)
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    fetchProfile()
   }, [])
 
   const handleSave = () => {
@@ -52,22 +57,45 @@ export default function ProfilePage() {
         education: profile.education,
         experience: profile.experience,
         skills: profile.skills,
-        preferredRoles: profile.preferredRoles,
-        preferredCompanies: profile.preferredCompanies,
         preferredLocations: profile.preferredLocations,
         resumeFileName: profile.resumeFileName,
+        
+        about: profile.about || "",
+        currentDesignation: profile.currentDesignation || "",
+        yearsOfExperience: Number(profile.yearsOfExperience) || 0,
+        currentCompany: profile.currentCompany || "",
+        currentSalary: profile.currentSalary || "",
+        expectedSalary: profile.expectedSalary || "",
+        preferredIndustry: profile.preferredIndustry || "",
+        preferredWorkMode: profile.preferredWorkMode || "Remote",
+        languages: profile.languages,
+
+        // Social Links
+        github: profile.github || "",
+        linkedin: profile.linkedin || "",
+        portfolio: profile.portfolio || "",
+        leetcode: profile.leetcode || "",
+        geeksforgeeks: profile.geeksforgeeks || "",
+        codechef: profile.codechef || "",
+        codeforces: profile.codeforces || "",
+        hackerrank: profile.hackerrank || "",
+        hackerearth: profile.hackerearth || "",
+        website: profile.website || "",
       }),
     })
       .then((res) => res.json())
       .then((data) => {
+        toast.success("Profile saved successfully!")
         setProfile((prev: any) => ({ ...prev, ...data }))
         setIsEditing(false)
       })
       .catch((err) => {
         console.error("Failed to save profile:", err)
+        toast.error("Failed to save profile changes")
       })
   }
 
+  // Helpers
   const addSkill = () => {
     if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
       setProfile({ ...profile, skills: [...profile.skills, newSkill.trim()] })
@@ -77,31 +105,6 @@ export default function ProfilePage() {
 
   const removeSkill = (skillToRemove: string) => {
     setProfile({ ...profile, skills: profile.skills.filter((skill: string) => skill !== skillToRemove) })
-  }
-
-  const addPreferredRole = () => {
-    if (newRole.trim() && !profile.preferredRoles.includes(newRole.trim())) {
-      setProfile({ ...profile, preferredRoles: [...profile.preferredRoles, newRole.trim()] })
-      setNewRole("")
-    }
-  }
-
-  const removePreferredRole = (roleToRemove: string) => {
-    setProfile({ ...profile, preferredRoles: profile.preferredRoles.filter((role: string) => role !== roleToRemove) })
-  }
-
-  const addPreferredCompany = () => {
-    if (newCompany.trim() && !profile.preferredCompanies.includes(newCompany.trim())) {
-      setProfile({ ...profile, preferredCompanies: [...profile.preferredCompanies, newCompany.trim()] })
-      setNewCompany("")
-    }
-  }
-
-  const removePreferredCompany = (companyToRemove: string) => {
-    setProfile({
-      ...profile,
-      preferredCompanies: profile.preferredCompanies.filter((company: string) => company !== companyToRemove),
-    })
   }
 
   const addPreferredLocation = () => {
@@ -118,289 +121,242 @@ export default function ProfilePage() {
     })
   }
 
+  const addLanguage = () => {
+    if (newLanguage.trim() && !profile.languages.includes(newLanguage.trim())) {
+      setProfile({ ...profile, languages: [...profile.languages, newLanguage.trim()] })
+      setNewLanguage("")
+    }
+  }
+
+  const removeLanguage = (langToRemove: string) => {
+    setProfile({
+      ...profile,
+      languages: profile.languages.filter((l: string) => l !== langToRemove),
+    })
+  }
+
   if (loading) {
-    return <AppLoader message="Retrieving your profile & job preferences" />
+    return <AppLoader message="Retrieving your profile preferences" />
   }
 
   return (
-    <>
-      <PageHeader title="Profile" description="Manage your personal information and job preferences">
+    <div className="space-y-6">
+      <PageHeader title="Profile Settings" description="Manage your professional experience, coding credentials, and dashboard parameters">
         <div className="flex gap-2">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)} className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
+              <Button onClick={handleSave} size="sm" className="bg-primary text-white cursor-pointer gap-1.5">
+                <Save className="h-4 w-4" /> Save Details
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+            <Button onClick={() => setIsEditing(true)} size="sm" className="cursor-pointer">Edit Profile</Button>
           )}
         </div>
       </PageHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Personal Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Your basic contact and professional details</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={profile.name}
-                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div>
-                <Label htmlFor="location">Current Location</Label>
-                <Input
-                  id="location"
-                  value={profile.location}
-                  onChange={(e) => setProfile({ ...profile, location: e.target.value })}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="education">Education</Label>
-              <Textarea
-                id="education"
-                value={profile.education}
-                onChange={(e) => setProfile({ ...profile, education: e.target.value })}
-                disabled={!isEditing}
-                rows={2}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="experience">Experience</Label>
-              <Textarea
-                id="experience"
-                value={profile.experience}
-                onChange={(e) => setProfile({ ...profile, experience: e.target.value })}
-                disabled={!isEditing}
-                rows={2}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Resume Upload */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Resume</CardTitle>
-            <CardDescription>Upload and manage your resume</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {profile.resumeFileName ? (
-                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <span className="text-sm font-medium">{profile.resumeFileName}</span>
-                  <Button variant="outline" size="sm" disabled={!isEditing}>
-                    Replace
-                  </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Column 1: Basic & Professional Info */}
+        <div className="lg:col-span-7 space-y-6">
+          <Card className="shadow-sm border-slate-150">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><Briefcase className="h-4 w-4 text-primary" /> Basic & Professional Details</CardTitle>
+              <CardDescription className="text-xs">Your core personal details and work statistics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Full Name</Label>
+                  <Input value={profile.name || ""} disabled className="bg-slate-50 text-xs h-9.5" />
                 </div>
-              ) : (
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                  <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">No resume uploaded</p>
-                  <Button variant="outline" size="sm" disabled={!isEditing}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Resume
-                  </Button>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Email Address</Label>
+                  <Input value={profile.email || ""} disabled className="bg-slate-50 text-xs h-9.5" />
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Skills */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Skills</CardTitle>
-            <CardDescription>Your technical and professional skills</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill: string) => (
-                  <Badge key={skill} variant="secondary" className="flex items-center gap-1">
-                    {skill}
-                    {isEditing && (
-                      <button onClick={() => removeSkill(skill)} className="ml-1 hover:text-destructive">
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Phone</Label>
+                  <Input value={profile.phone || ""} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} disabled={!isEditing} className="text-xs h-9.5" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Location</Label>
+                  <Input value={profile.location || ""} onChange={(e) => setProfile({ ...profile, location: e.target.value })} disabled={!isEditing} className="text-xs h-9.5" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">About Me / Bio</Label>
+                <Textarea value={profile.about || ""} onChange={(e) => setProfile({ ...profile, about: e.target.value })} disabled={!isEditing} className="text-xs leading-relaxed min-h-[90px]" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Current Designation</Label>
+                  <Input value={profile.currentDesignation || ""} onChange={(e) => setProfile({ ...profile, currentDesignation: e.target.value })} disabled={!isEditing} className="text-xs h-9.5" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Current Company</Label>
+                  <Input value={profile.currentCompany || ""} onChange={(e) => setProfile({ ...profile, currentCompany: e.target.value })} disabled={!isEditing} className="text-xs h-9.5" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Experience (Years)</Label>
+                  <Input type="number" value={profile.yearsOfExperience} onChange={(e) => setProfile({ ...profile, yearsOfExperience: Number(e.target.value) })} disabled={!isEditing} className="text-xs h-9.5" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Expected Salary</Label>
+                  <Input value={profile.expectedSalary || ""} onChange={(e) => setProfile({ ...profile, expectedSalary: e.target.value })} disabled={!isEditing} placeholder="e.g. $140,000" className="text-xs h-9.5" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-slate-700">Work Mode Preference</Label>
+                  {isEditing ? (
+                    <Select value={profile.preferredWorkMode || "Remote"} onValueChange={(val) => setProfile({ ...profile, preferredWorkMode: val })}>
+                      <SelectTrigger className="text-xs h-9.5 cursor-pointer">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Remote" className="text-xs cursor-pointer">💻 Remote</SelectItem>
+                        <SelectItem value="Hybrid" className="text-xs cursor-pointer">🏢 Hybrid</SelectItem>
+                        <SelectItem value="On-site" className="text-xs cursor-pointer">🚶 On-site</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input value={profile.preferredWorkMode || "Remote"} disabled className="bg-slate-50 text-xs h-9.5" />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Education Details</Label>
+                <Textarea value={profile.education || ""} onChange={(e) => setProfile({ ...profile, education: e.target.value })} disabled={!isEditing} className="text-xs leading-relaxed min-h-[80px]" />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Experience History</Label>
+                <Textarea value={profile.experience || ""} onChange={(e) => setProfile({ ...profile, experience: e.target.value })} disabled={!isEditing} className="text-xs leading-relaxed min-h-[80px]" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Column 2: Social Links, Skills & Tags */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Coding & Social URLs */}
+          <Card className="shadow-sm border-slate-150">
+            <CardHeader>
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><Globe className="h-4 w-4 text-primary" /> Social & Coding Accounts</CardTitle>
+              <CardDescription className="text-xs">Direct links to your public profiles</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3.5">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-slate-650 flex items-center gap-1.5"><Linkedin className="h-3.5 w-3.5 text-blue-600" /> LinkedIn</Label>
+                <Input value={profile.linkedin || ""} onChange={(e) => setProfile({ ...profile, linkedin: e.target.value })} disabled={!isEditing} placeholder="https://linkedin.com/in/username" className="text-xs h-8.5 font-mono" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-slate-650 flex items-center gap-1.5"><Github className="h-3.5 w-3.5 text-slate-900" /> GitHub</Label>
+                <Input value={profile.github || ""} onChange={(e) => setProfile({ ...profile, github: e.target.value })} disabled={!isEditing} placeholder="https://github.com/username" className="text-xs h-8.5 font-mono" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-slate-650 flex items-center gap-1.5"><Code className="h-3.5 w-3.5 text-amber-500" /> LeetCode</Label>
+                <Input value={profile.leetcode || ""} onChange={(e) => setProfile({ ...profile, leetcode: e.target.value })} disabled={!isEditing} placeholder="https://leetcode.com/username" className="text-xs h-8.5 font-mono" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-slate-650 flex items-center gap-1.5"><Globe className="h-3.5 w-3.5 text-indigo-500" /> Portfolio</Label>
+                <Input value={profile.portfolio || ""} onChange={(e) => setProfile({ ...profile, portfolio: e.target.value })} disabled={!isEditing} placeholder="https://yourportfolio.com" className="text-xs h-8.5 font-mono" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-slate-650 flex items-center gap-1.5"><Globe className="h-3.5 w-3.5 text-teal-600" /> Website</Label>
+                <Input value={profile.website || ""} onChange={(e) => setProfile({ ...profile, website: e.target.value })} disabled={!isEditing} placeholder="https://yourwebsite.com" className="text-xs h-8.5 font-mono" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Interactive Skills */}
+          <Card className="shadow-sm border-slate-150">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary" /> Professional Skills</CardTitle>
+              <CardDescription className="text-xs">Add your top developer capabilities</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {isEditing && (
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add a skill"
+                    placeholder="Add skill (e.g. Next.js)"
                     value={newSkill}
                     onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addSkill()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addSkill()
+                      }
+                    }}
+                    className="text-xs h-8.5"
                   />
-                  <Button onClick={addSkill} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  <Button size="sm" onClick={addSkill} className="cursor-pointer h-8.5 text-xs"><Plus className="h-3.5 w-3.5 mr-1" /> Add</Button>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferred Roles */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferred Roles</CardTitle>
-            <CardDescription>Job roles you're interested in</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {profile.preferredRoles.map((role: string) => (
-                  <Badge key={role} variant="outline" className="flex items-center gap-1">
-                    {role}
+              <div className="flex flex-wrap gap-1.5">
+                {profile.skills.map((skill: string) => (
+                  <Badge key={skill} variant="secondary" className="text-[10px] bg-slate-100 text-slate-700 py-1 px-2 border flex items-center gap-1">
+                    {skill}
                     {isEditing && (
-                      <button onClick={() => removePreferredRole(role)} className="ml-1 hover:text-destructive">
-                        <X className="h-3 w-3" />
-                      </button>
+                      <X className="h-3 w-3 text-slate-400 hover:text-red-500 cursor-pointer" onClick={() => removeSkill(skill)} />
                     )}
                   </Badge>
                 ))}
               </div>
+            </CardContent>
+          </Card>
 
+          {/* Languages */}
+          <Card className="shadow-sm border-slate-150">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-1.5"><Globe className="h-4 w-4 text-primary" /> Languages</CardTitle>
+              <CardDescription className="text-xs">Spoken or written languages</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               {isEditing && (
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Add a preferred role"
-                    value={newRole}
-                    onChange={(e) => setNewRole(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addPreferredRole()}
+                    placeholder="Add language (e.g. Spanish)"
+                    value={newLanguage}
+                    onChange={(e) => setNewLanguage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addLanguage()
+                      }
+                    }}
+                    className="text-xs h-8.5"
                   />
-                  <Button onClick={addPreferredRole} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  <Button size="sm" onClick={addLanguage} className="cursor-pointer h-8.5 text-xs"><Plus className="h-3.5 w-3.5 mr-1" /> Add</Button>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferred Companies */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferred Companies</CardTitle>
-            <CardDescription>Companies you'd like to work for</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {profile.preferredCompanies.map((company: string) => (
-                  <Badge key={company} variant="outline" className="flex items-center gap-1">
-                    {company}
+              <div className="flex flex-wrap gap-1.5">
+                {profile.languages.map((lang: string) => (
+                  <Badge key={lang} variant="secondary" className="text-[10px] bg-indigo-50/50 text-indigo-700 py-1 px-2 border border-indigo-100 flex items-center gap-1">
+                    {lang}
                     {isEditing && (
-                      <button onClick={() => removePreferredCompany(company)} className="ml-1 hover:text-destructive">
-                        <X className="h-3 w-3" />
-                      </button>
+                      <X className="h-3 w-3 text-slate-400 hover:text-red-500 cursor-pointer" onClick={() => removeLanguage(lang)} />
                     )}
                   </Badge>
                 ))}
               </div>
-
-              {isEditing && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a preferred company"
-                    value={newCompany}
-                    onChange={(e) => setNewCompany(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addPreferredCompany()}
-                  />
-                  <Button onClick={addPreferredCompany} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Preferred Locations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Preferred Locations</CardTitle>
-            <CardDescription>Locations where you'd like to work</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {profile.preferredLocations.map((location: string) => (
-                  <Badge key={location} variant="outline" className="flex items-center gap-1">
-                    {location}
-                    {isEditing && (
-                      <button
-                        onClick={() => removePreferredLocation(location)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    )}
-                  </Badge>
-                ))}
-              </div>
-
-              {isEditing && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a preferred location"
-                    value={newLocation}
-                    onChange={(e) => setNewLocation(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && addPreferredLocation()}
-                  />
-                  <Button onClick={addPreferredLocation} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </>
+    </div>
   )
 }

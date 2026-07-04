@@ -1,19 +1,20 @@
 import { db } from "./index"
 import {
-  corporateJobs,
-  governmentJobs,
   interviewQuestions,
   readingMaterials,
   interviewers,
   users,
   userProfiles,
-  applications,
   chatHistory,
   notifications,
   activityLogs,
   settings,
-  favorites,
+  bookmarks,
   recentSearches,
+  codingProfiles,
+  learningPaths,
+  learningProgress,
+  userStatistics,
 } from "./schema"
 
 async function main() {
@@ -22,116 +23,20 @@ async function main() {
   try {
     // 1. Clean up existing tables to ensure a clean state
     console.log("Clearing existing tables...")
-    await db.delete(applications)
     await db.delete(userProfiles)
-    await db.delete(favorites)
+    await db.delete(bookmarks)
     await db.delete(recentSearches)
     await db.delete(chatHistory)
     await db.delete(notifications)
     await db.delete(activityLogs)
     await db.delete(settings)
-    await db.delete(corporateJobs)
-    await db.delete(governmentJobs)
     await db.delete(interviewQuestions)
     await db.delete(readingMaterials)
     await db.delete(interviewers)
-    // Keep users to prevent breaking active sign-in sessions in dev,
-    // but we can clear user profiles and applications.
-
-    console.log("Seeding Corporate Jobs...")
-    await db.insert(corporateJobs).values([
-      {
-        title: "Senior Full-Stack Engineer",
-        company: "Stripe",
-        location: "San Francisco, CA (Hybrid)",
-        type: "Full-time",
-        salary: "$165,000 - $210,000",
-        postedDate: new Date("2026-06-15"),
-        deadline: new Date("2026-08-30"),
-        description: "Join the Core Billing team to design, build, and scale billing APIs that power millions of businesses globally. You will work with React, TypeScript, Ruby on Rails, and Go.",
-        requirements: ["5+ years of experience with React and TypeScript", "Strong understanding of distributed systems", "Prior experience in Fintech or Payments is a plus"],
-        status: "active",
-      },
-      {
-        title: "Frontend Developer (React)",
-        company: "Vercel",
-        location: "Remote (Global)",
-        type: "Full-time",
-        salary: "$120,000 - $160,000",
-        postedDate: new Date("2026-06-20"),
-        deadline: new Date("2026-07-25"),
-        description: "Work on the Next.js framework team. Help build the future of the Web by improving developer experience, optimization pipelines, and UI library integrations.",
-        requirements: ["Expertise in Next.js, React, and Tailwind CSS", "Deep knowledge of Web Performance APIs", "Contributions to open-source software is highly desired"],
-        status: "active",
-      },
-      {
-        title: "Staff Product Manager",
-        company: "Google",
-        location: "Mountain View, CA",
-        type: "Full-time",
-        salary: "$210,000 - $280,000",
-        postedDate: new Date("2026-06-10"),
-        deadline: new Date("2026-08-15"),
-        description: "Lead product strategy and execution for Gemini Developers Platform. Define the roadmap for SDKs, developer portal, and integration workflows.",
-        requirements: ["8+ years of product management experience", "Background in developer tools or API platforms", "BS/MS in Computer Science or equivalent practical experience"],
-        status: "active",
-      },
-      {
-        title: "Machine Learning Engineer",
-        company: "OpenAI",
-        location: "San Francisco, CA",
-        type: "Full-time",
-        salary: "$190,000 - $260,000",
-        postedDate: new Date("2026-06-22"),
-        deadline: new Date("2026-09-01"),
-        description: "Train, evaluate, and deploy next-generation foundational models. Research optimizations for transformer training pipelines at scale.",
-        requirements: ["Solid understanding of PyTorch and deep learning architectures", "Experience with distributed training (DeepSpeed, Megatron-LM)", "Track record of publications at NeurIPS, ICML, or CVPR"],
-        status: "active",
-      },
-      {
-        title: "Data Analyst",
-        company: "Netflix",
-        location: "Los Gatos, CA (Hybrid)",
-        type: "Full-time",
-        salary: "$110,000 - $145,000",
-        postedDate: new Date("2026-06-18"),
-        deadline: new Date("2026-07-30"),
-        description: "Partner with content development teams to analyze viewership data, optimize marketing spend, and predict content performance.",
-        requirements: ["Proficiency in SQL and Python/R", "Experience with Tableau or similar visualization tools", "Strong storytelling and communication skills using data"],
-        status: "active",
-      },
-    ])
-
-    console.log("Seeding Government Jobs...")
-    await db.insert(governmentJobs).values([
-      {
-        title: "Scientific Officer (Computer Science)",
-        department: "Bhabha Atomic Research Centre (BARC)",
-        eligibility: "B.E. / B.Tech / B.Sc (Engineering) in Computer Science with minimum 60% aggregate marks",
-        location: "Mumbai, Maharashtra",
-        lastDate: new Date("2026-08-10"),
-        applyLink: "https://barconlineexam.gov.in",
-        vacancies: 25,
-      },
-      {
-        title: "Assistant Manager (Information Technology)",
-        department: "National Bank for Agriculture and Rural Development (NABARD)",
-        eligibility: "Bachelor's Degree in Computer Science / IT / Computer Applications with 60% marks",
-        location: "New Delhi, Delhi",
-        lastDate: new Date("2026-07-28"),
-        applyLink: "https://nabard.org/careers",
-        vacancies: 15,
-      },
-      {
-        title: "Scientist 'B' (IT/CS)",
-        department: "National Informatics Centre (NIC)",
-        eligibility: "B.E/B.Tech in Computer Science / IT / Electronics & Communication",
-        location: "All India (Transferable)",
-        lastDate: new Date("2026-08-20"),
-        applyLink: "https://calicut.nielit.in/nic",
-        vacancies: 70,
-      },
-    ])
+    await db.delete(codingProfiles)
+    await db.delete(learningPaths)
+    await db.delete(learningProgress)
+    await db.delete(userStatistics)
 
     console.log("Seeding Interview Questions...")
     await db.insert(interviewQuestions).values([
@@ -161,8 +66,8 @@ async function main() {
       },
     ])
 
-    console.log("Seeding Reading Materials...")
-    await db.insert(readingMaterials).values([
+    console.log("Seeding Reading/Study Materials...")
+    const seededMaterials = await db.insert(readingMaterials).values([
       {
         title: "Mastering System Design: Fundamental Concepts",
         category: "System Design",
@@ -196,7 +101,7 @@ async function main() {
         author: "Gayle Laakmann McDowell",
         rating: 4.7,
       },
-    ])
+    ]).returning()
 
     console.log("Seeding Interviewers...")
     await db.insert(interviewers).values([
@@ -219,6 +124,12 @@ async function main() {
         interviewTypes: ["System Design", "Coding (DSA)", "General Technical Resume Review"],
         linkedIn: "https://linkedin.com/in/arjun-mehta-gcp",
         github: "https://github.com/arjunmehta",
+        portfolio: "https://arjunmehta.dev",
+        pricingType: "paid",
+        hourlyCharges: 120,
+        verificationStatus: "verified",
+        languages: ["English", "Hindi"],
+        interviewCategories: ["System Design", "DSA", "Backend"],
         isActive: true,
         joinedDate: new Date("2024-01-10"),
       },
@@ -241,51 +152,39 @@ async function main() {
         interviewTypes: ["Frontend Technical", "React Deep-dive", "Behavioral / Leadership"],
         linkedIn: "https://linkedin.com/in/sarah-jenkins-stripe",
         github: "https://github.com/sjenkins-dev",
+        portfolio: "https://sarahjenkins.dev",
+        pricingType: "free",
+        hourlyCharges: 0,
+        verificationStatus: "verified",
+        languages: ["English"],
+        interviewCategories: ["Frontend", "React", "Next.js", "Behavioral"],
         isActive: true,
         joinedDate: new Date("2024-03-15"),
       },
     ])
 
-    console.log("Seeding Applications...")
-    await db.insert(applications).values([
+    console.log("Seeding Learning Paths...")
+    await db.insert(learningPaths).values([
       {
-        company: "Stripe",
-        role: "Senior Full-Stack Engineer",
-        status: "Interview Scheduled",
-        appliedDate: new Date("2026-06-16"),
-        deadline: new Date("2026-07-15"),
-        location: "San Francisco, CA (Hybrid)",
-        salary: "$165,000 - $210,000",
-        notes: "Technical interview scheduled with Sarah Jenkins on Stripe Billing team.",
+        title: "Frontend Mastery Path",
+        description: "Learn how to build premium, state-of-the-art interactive web interfaces from vanilla CSS up to Next.js production deployments.",
+        category: "Frontend",
+        difficulty: "Intermediate",
+        estimatedTime: "25 hours",
       },
       {
-        company: "Vercel",
-        role: "Frontend Developer (React)",
-        status: "Applied",
-        appliedDate: new Date("2026-06-21"),
-        deadline: new Date("2026-07-25"),
-        location: "Remote (Global)",
-        salary: "$120,000 - $160,000",
-        notes: "Next.js team role. Reached out to recruiter via Twitter/X.",
+        title: "Advanced Data Structures & Algorithms",
+        description: "Deep dive into problem solving techniques: arrays, lists, sliding windows, recursion, dynamic programming and systems architecture.",
+        category: "DSA",
+        difficulty: "Advanced",
+        estimatedTime: "40 hours",
       },
       {
-        company: "Google",
-        role: "Staff Product Manager",
-        status: "Offer Received",
-        appliedDate: new Date("2026-06-11"),
-        deadline: new Date("2026-08-15"),
-        location: "Mountain View, CA",
-        salary: "$210,000 - $280,000",
-        notes: "Received verbal offer. Negotiation phase on equity package.",
-      },
-      {
-        company: "Netflix",
-        role: "Data Analyst",
-        status: "Rejected",
-        appliedDate: new Date("2026-06-19"),
-        location: "Los Gatos, CA (Hybrid)",
-        salary: "$110,000 - $145,000",
-        notes: "Role closed. Received standard rejection email.",
+        title: "Backend Microservices with Node.js",
+        description: "Design microservices, handle REST APIs, configure relational & non-relational database schemas, and optimize backend query latency.",
+        category: "Backend",
+        difficulty: "Intermediate",
+        estimatedTime: "30 hours",
       },
     ])
 

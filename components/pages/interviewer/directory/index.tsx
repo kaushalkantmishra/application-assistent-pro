@@ -1,535 +1,272 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { RoleGuard } from "@/components/role-guard"
 import { PageHeader } from "@/components/page-header"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { type InterviewerProfile } from "@/types"
-import { Search, Star, Calendar, Users, Github, Linkedin, MapPin, Briefcase, Clock, Award } from "lucide-react"
+import { Search, Star, Calendar, Users, Github, Linkedin, Briefcase, DollarSign, MessageSquare, Plus } from "lucide-react"
 import { AppLoader } from "@/components/app-loader"
+import BookingWizard from "../booking-wizard"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
-const interviewTypeColors = {
-  Technical: "bg-blue-100 text-blue-800",
-  Behavioral: "bg-green-100 text-green-800",
-  "System Design": "bg-purple-100 text-purple-800",
-  HR: "bg-orange-100 text-orange-800",
-}
-
-interface InterviewSession {
+interface InterviewerProfile {
   id: string
-  interviewerId: string
-  candidateId: string
-  scheduledDate: string
-  duration: number
-  type: string
-  status: string
-  meetingLink?: string
-  feedback?: string
-  rating?: number
-  notes?: string
+  name: string
+  email: string
+  company: string
+  role: string
+  department: string
+  experience: number
+  specializations: string[]
+  bio: string
+  avatar?: string | null
+  rating: number
+  totalInterviews: number
+  pricingType: string
+  hourlyCharges: number
+  interviewTypes: string[]
+  languages?: string[]
 }
 
-const mockInterviewSessions: InterviewSession[] = [
-  {
-    id: "1",
-    interviewerId: "1",
-    candidateId: "user1",
-    scheduledDate: "2024-01-25T10:00:00Z",
-    duration: 60,
-    type: "Technical",
-    status: "Scheduled",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-  },
-  {
-    id: "2",
-    interviewerId: "2",
-    candidateId: "user1",
-    scheduledDate: "2024-01-20T14:00:00Z",
-    duration: 45,
-    type: "Behavioral",
-    status: "Completed",
-    feedback: "Great communication skills and problem-solving approach. Shows strong leadership potential.",
-    rating: 4,
-    notes: "Candidate demonstrated excellent STAR method usage and provided concrete examples.",
-  },
-  {
-    id: "3",
-    interviewerId: "3",
-    candidateId: "user2",
-    scheduledDate: "2024-01-28T11:00:00Z",
-    duration: 30,
-    type: "HR",
-    status: "Scheduled",
-    meetingLink: "https://zoom.us/j/123456789",
-  },
-]
+const getAvatarPlaceholder = (name: string) => {
+  const lowercaseName = name.toLowerCase()
+  const isFemale = lowercaseName.includes("sarah") || 
+                   lowercaseName.includes("aadhya") || 
+                   lowercaseName.includes("jane") || 
+                   lowercaseName.includes("priya") || 
+                   lowercaseName.includes("emma") || 
+                   lowercaseName.includes("lisa")
+  if (isFemale) {
+    return "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop"
+  }
+  return "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop"
+}
 
 export default function InterviewerDirectoryPage() {
+  const router = useRouter()
   const [profiles, setProfiles] = useState<InterviewerProfile[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCompany, setSelectedCompany] = useState<string>("all")
   const [selectedSpecialization, setSelectedSpecialization] = useState<string>("all")
-  const [selectedInterviewType, setSelectedInterviewType] = useState<string>("all")
+  const [selectedPricing, setSelectedPricing] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("rating")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch("/api/interviewers")
-      .then((res) => res.json())
-      .then((data) => {
-        setProfiles(data)
-        setLoading(false)
-      })
-      .catch((err) => {
-        console.error("Failed to fetch interviewers:", err)
-        setLoading(false)
-      })
-  }, [])
+  // Booking wizard state
+  const [bookingInterviewer, setBookingInterviewer] = useState<InterviewerProfile | null>(null)
 
-  const companies = Array.from(new Set(profiles.map((profile) => profile.company).filter(Boolean)))
-  const specializations = Array.from(new Set(profiles.flatMap((profile) => profile.specializations).filter(Boolean)))
-  const interviewTypes = Array.from(new Set(profiles.flatMap((profile) => profile.interviewTypes).filter(Boolean)))
+  const fetchProfiles = async () => {
+    try {
+      setLoading(true)
+      const query = new URLSearchParams()
+      if (searchTerm) query.append("search", searchTerm)
+      if (selectedCompany !== "all") query.append("company", selectedCompany)
+      if (selectedSpecialization !== "all") query.append("specialization", selectedSpecialization)
+      if (selectedPricing !== "all") query.append("pricingType", selectedPricing)
+      query.append("sortBy", sortBy)
 
-  const filteredProfiles = profiles
-    .filter((profile) => {
-      const matchesSearch =
-        profile.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profile.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profile.specializations.some((spec) => spec.toLowerCase().includes(searchTerm.toLowerCase()))
-      const matchesCompany = selectedCompany === "all" || profile.company === selectedCompany
-      const matchesSpecialization =
-        selectedSpecialization === "all" || profile.specializations.includes(selectedSpecialization)
-      const matchesInterviewType =
-        selectedInterviewType === "all" || profile.interviewTypes.includes(selectedInterviewType as any)
-
-      return matchesSearch && matchesCompany && matchesSpecialization && matchesInterviewType && profile.isActive
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "rating":
-          return b.rating - a.rating
-        case "experience":
-          return b.experience - a.experience
-        case "interviews":
-          return b.totalInterviews - a.totalInterviews
-        case "name":
-          return a.name.localeCompare(b.name)
-        default:
-          return 0
+      const res = await fetch(`/api/interviewers?${query.toString()}`)
+      if (res.ok) {
+        setProfiles(await res.json())
       }
-    })
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const topInterviewers = profiles
-    .filter((profile) => profile.isActive)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3)
+  useEffect(() => {
+    fetchProfiles()
+  }, [searchTerm, selectedCompany, selectedSpecialization, selectedPricing, sortBy])
 
-  const recentSessions = mockInterviewSessions
-    .filter((session) => session.status === "Completed")
-    .sort((a, b) => new Date(b.scheduledDate).getTime() - new Date(a.scheduledDate).getTime())
-    .slice(0, 5)
+  // Extract filter dropdown lists
+  const companies = Array.from(new Set(profiles.map((p) => p.company).filter(Boolean)))
+  const specializations = Array.from(new Set(profiles.flatMap((p) => p.specializations || []).filter(Boolean)))
 
-  const stats = {
-    totalInterviewers: profiles.filter((p) => p.isActive).length,
-    totalInterviews: profiles.reduce((sum, p) => sum + p.totalInterviews, 0),
-    averageRating: profiles.length > 0 ? (
-      profiles.reduce((sum, p) => sum + p.rating, 0) / profiles.length
-    ).toFixed(1) : "5.0",
-    companiesCount: companies.length,
+  const handleStartChat = async (profile: InterviewerProfile) => {
+    try {
+      const res = await fetch("/api/chat/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId: profile.id }), // resolving target profile
+      })
+
+      if (res.ok) {
+        const room = await res.json()
+        router.push(`/interviewer/chat?roomId=${room.id}`)
+      } else {
+        throw new Error("Could not start chat session")
+      }
+    } catch (e: any) {
+      toast.error(e.message)
+    }
   }
 
   return (
-    <RoleGuard
-      allowedRoles={["user"]}
-      fallbackMessage="The interviewer directory is available for job seekers to find and connect with interviewers."
-    >
-      <>
-        <PageHeader
-          title="Interviewer Directory"
-          description="Comprehensive directory of experienced interviewers from top companies"
-        >
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {filteredProfiles.length} Interviewers
-            </Badge>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
-              {companies.length} Companies
-            </Badge>
+    <div className="space-y-6">
+      <PageHeader
+        title="Interviewer Directory"
+        description="Find and book 1-on-1 interview preparation, technical mock challenges, or resume review sessions with industry leaders"
+      />
+
+      {/* FILTER CONTROLS */}
+      <Card className="shadow-sm border-slate-100">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-5 gap-3.5 text-xs">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search by name, bio, skills..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 text-xs h-9.5"
+            />
           </div>
-        </PageHeader>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Interviewers</p>
-                  <p className="text-2xl font-bold">{stats.totalInterviewers}</p>
-                </div>
-                <Users className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+            <SelectTrigger className="text-xs h-9.5">
+              <SelectValue placeholder="Filter by Company" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">All Companies</SelectItem>
+              {companies.map((c) => (
+                <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Interviews</p>
-                  <p className="text-2xl font-bold">{stats.totalInterviews}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+          <Select value={selectedSpecialization} onValueChange={setSelectedSpecialization}>
+            <SelectTrigger className="text-xs h-9.5">
+              <SelectValue placeholder="Filter by Skill" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">All Skills</SelectItem>
+              {specializations.map((s) => (
+                <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Average Rating</p>
-                  <p className="text-2xl font-bold">{stats.averageRating}</p>
-                </div>
-                <Star className="h-8 w-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
+          <Select value={selectedPricing} onValueChange={setSelectedPricing}>
+            <SelectTrigger className="text-xs h-9.5">
+              <SelectValue placeholder="Pricing Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all" className="text-xs">All Pricing</SelectItem>
+              <SelectItem value="free" className="text-xs">Free sessions</SelectItem>
+              <SelectItem value="paid" className="text-xs">Paid sessions</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Companies</p>
-                  <p className="text-2xl font-bold">{stats.companiesCount}</p>
-                </div>
-                <Briefcase className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="text-xs h-9.5">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rating" className="text-xs">Top Rated</SelectItem>
+              <SelectItem value="price_low" className="text-xs">Price: Low to High</SelectItem>
+              <SelectItem value="price_high" className="text-xs">Price: High to Low</SelectItem>
+              <SelectItem value="experience" className="text-xs">Highest Experience</SelectItem>
+              <SelectItem value="recently_joined" className="text-xs">Recently Joined</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* DIRECTORY LISTINGS */}
+      {loading ? (
+        <div className="py-24">
+          <AppLoader message="Retrieving interviewer directory profiles" />
         </div>
+      ) : profiles.length === 0 ? (
+        <div className="text-center py-20 border border-dashed rounded-xl bg-slate-50/50">
+          <Briefcase className="h-12 w-12 text-slate-350 mx-auto mb-3" />
+          <h4 className="text-sm font-bold text-slate-700">No Interviewers Found</h4>
+          <p className="text-xs text-slate-500 mt-1">Try resetting filters or modifying your search query.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {profiles.map((profile) => (
+            <Card key={profile.id} className="shadow-sm border hover:border-slate-300 transition-all border-slate-100 flex flex-col justify-between overflow-hidden">
+              <CardHeader className="pb-3 flex flex-row gap-4 space-y-0">
+                <Avatar className="h-14 w-14 border border-slate-100 shadow-sm shrink-0">
+                  <AvatarImage src={profile.avatar || getAvatarPlaceholder(profile.name)} />
+                  <AvatarFallback className="bg-indigo-50 text-indigo-700 font-bold text-sm">
+                    {profile.name.split(" ").map(n => n[0]).join("")}
+                  </AvatarFallback>
+                </Avatar>
 
-        <Tabs defaultValue="directory" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="directory">Directory</TabsTrigger>
-            <TabsTrigger value="top-rated">Top Rated</TabsTrigger>
-            <TabsTrigger value="recent">Recent Activity</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="directory" className="space-y-6">
-            {/* Filters */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Find Interviewers</CardTitle>
-                <CardDescription>Filter and sort interviewers by various criteria</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search interviewers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                <div className="space-y-1 min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1 flex-wrap">
+                    <CardTitle className="text-sm font-bold text-slate-800 truncate">
+                      {profile.name}
+                    </CardTitle>
+                    <Badge className="bg-indigo-650 text-white font-bold text-[9px]">
+                      {profile.pricingType === "free" ? "Free Session" : `$${profile.hourlyCharges}/hr`}
+                    </Badge>
                   </div>
-
-                  <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Companies</SelectItem>
-                      {companies.map((company) => (
-                        <SelectItem key={company} value={company}>
-                          {company}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedSpecialization} onValueChange={setSelectedSpecialization}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Specialization" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Specializations</SelectItem>
-                      {specializations.map((spec) => (
-                        <SelectItem key={spec} value={spec}>
-                          {spec}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedInterviewType} onValueChange={setSelectedInterviewType}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Interview Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      {interviewTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="rating">Rating</SelectItem>
-                      <SelectItem value="experience">Experience</SelectItem>
-                      <SelectItem value="interviews">Total Interviews</SelectItem>
-                      <SelectItem value="name">Name</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <CardDescription className="text-xs font-semibold text-indigo-650 leading-relaxed truncate">
+                    {profile.role} at {profile.company}
+                  </CardDescription>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-450 mt-0.5">
+                    <span className="flex items-center gap-0.5"><Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" /> {profile.rating}</span>
+                    <span>•</span>
+                    <span>{profile.experience} yrs exp</span>
+                    <span>•</span>
+                    <span>{profile.totalInterviews} sessions</span>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Interviewer Grid */}
-            {loading ? (
-              <AppLoader message="Connecting with the expert interviewer panel" />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProfiles.map((profile) => (
-                  <InterviewerCard key={profile.id} profile={profile} />
-                ))}
-              </div>
-            )}
-
-            {!loading && filteredProfiles.length === 0 && (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No interviewers found</h3>
-                  <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="top-rated" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-yellow-500" />
-                  Top Rated Interviewers
-                </CardTitle>
-                <CardDescription>Our highest-rated interviewers based on candidate feedback</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {topInterviewers.map((profile, index) => (
-                    <div key={profile.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                      <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full font-bold">
-                        {index + 1}
-                      </div>
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
-                        <AvatarFallback>
-                          {profile.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{profile.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {profile.role} at {profile.company}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 mb-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          <span className="font-semibold">{profile.rating}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{profile.totalInterviews} interviews</p>
-                      </div>
-                      <Button size="sm">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Schedule
-                      </Button>
-                    </div>
+
+              <CardContent className="py-2 space-y-3 text-xs flex-1">
+                <p className="text-slate-500 line-clamp-3 leading-relaxed whitespace-pre-wrap font-sans">
+                  {profile.bio}
+                </p>
+
+                <div className="flex flex-wrap gap-1">
+                  {profile.specializations?.slice(0, 4).map((spec) => (
+                    <Badge key={spec} variant="secondary" className="text-[9px] font-medium bg-slate-100 text-slate-700 border-none">
+                      {spec}
+                    </Badge>
                   ))}
                 </div>
               </CardContent>
+
+              <CardFooter className="pt-2 border-t flex justify-between items-center gap-3 bg-slate-50/50 pb-3 mt-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleStartChat(profile)}
+                  className="flex-1 text-xs gap-1 cursor-pointer font-bold border-indigo-200 text-indigo-700 bg-white"
+                >
+                  <MessageSquare className="h-4 w-4" /> Message
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setBookingInterviewer(profile)}
+                  className="flex-1 text-xs gap-1 cursor-pointer bg-primary text-white font-bold"
+                >
+                  <Calendar className="h-4 w-4" /> Book Session
+                </Button>
+              </CardFooter>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="recent" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-blue-500" />
-                  Recent Interview Activity
-                </CardTitle>
-                <CardDescription>Latest completed interviews and feedback</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentSessions.map((session) => {
-                    const interviewer = profiles.find((p: InterviewerProfile) => p.id === session.interviewerId)
-                    if (!interviewer) return null
-
-                    return (
-                      <div key={session.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={interviewer.avatar || "/placeholder.svg"} alt={interviewer.name} />
-                          <AvatarFallback>
-                            {interviewer.name
-                              .split(" ")
-                              .map((n: string) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{interviewer.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {session.type} Interview • {new Date(session.scheduledDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          {session.rating && (
-                            <div className="flex items-center gap-1 mb-1">
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                              <span className="font-medium">{session.rating}/5</span>
-                            </div>
-                          )}
-                          <Badge className={interviewTypeColors[session.type as keyof typeof interviewTypeColors]}>
-                            {session.type}
-                          </Badge>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </>
-    </RoleGuard>
-  )
-}
-
-function InterviewerCard({ profile }: { profile: InterviewerProfile }) {
-  return (
-    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
-      <CardHeader className="pb-4">
-        <div className="flex items-start gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarImage src={profile.avatar || "/placeholder.svg"} alt={profile.name} />
-            <AvatarFallback className="text-lg">
-              {profile.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-xl mb-1">{profile.name}</CardTitle>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-              <Briefcase className="h-4 w-4" />
-              <span className="truncate">{profile.role}</span>
-            </div>
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span className="truncate">{profile.company}</span>
-            </div>
-          </div>
+          ))}
         </div>
-      </CardHeader>
+      )}
 
-      <CardContent className="flex-1 flex flex-col space-y-4">
-        <CardDescription className="flex-1">{profile.bio}</CardDescription>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 py-3 border-t border-b">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-              <span className="font-semibold">{profile.rating}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Rating</p>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold mb-1">{profile.totalInterviews}</div>
-            <p className="text-xs text-muted-foreground">Interviews</p>
-          </div>
-        </div>
-
-        {/* Interview Types */}
-        <div>
-          <p className="text-sm font-medium mb-2">Interview Types</p>
-          <div className="flex flex-wrap gap-1">
-            {profile.interviewTypes.map((type) => (
-              <Badge key={type} className={`text-xs ${interviewTypeColors[type]}`}>
-                {type}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        {/* Specializations */}
-        <div>
-          <p className="text-sm font-medium mb-2">Specializations</p>
-          <div className="flex flex-wrap gap-1">
-            {profile.specializations.slice(0, 3).map((spec) => (
-              <Badge key={spec} variant="outline" className="text-xs">
-                {spec}
-              </Badge>
-            ))}
-            {profile.specializations.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{profile.specializations.length - 3} more
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Experience */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Experience</span>
-          <span className="font-medium">{profile.experience} years</span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            {profile.linkedIn && (
-              <Button size="sm" variant="ghost" asChild>
-                <a href={profile.linkedIn} target="_blank" rel="noopener noreferrer">
-                  <Linkedin className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
-            {profile.github && (
-              <Button size="sm" variant="ghost" asChild>
-                <a href={profile.github} target="_blank" rel="noopener noreferrer">
-                  <Github className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
-          </div>
-          <Button size="sm">
-            <Calendar className="h-4 w-4 mr-1" />
-            Schedule
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Booking Wizard Dialog launcher */}
+      {bookingInterviewer && (
+        <BookingWizard
+          isOpen={true}
+          onClose={() => setBookingInterviewer(null)}
+          interviewer={bookingInterviewer}
+        />
+      )}
+    </div>
   )
 }

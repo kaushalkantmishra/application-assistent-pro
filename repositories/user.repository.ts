@@ -19,6 +19,28 @@ export interface UserProfileInput {
   preferredCompanies?: string[] | null
   preferredLocations?: string[] | null
   resumeFileName?: string | null
+  
+  about?: string | null
+  currentDesignation?: string | null
+  yearsOfExperience?: number | null
+  currentCompany?: string | null
+  currentSalary?: string | null
+  expectedSalary?: string | null
+  preferredIndustry?: string | null
+  preferredWorkMode?: string | null
+  languages?: string[] | null
+
+  // Social Links
+  github?: string | null
+  linkedin?: string | null
+  portfolio?: string | null
+  leetcode?: string | null
+  geeksforgeeks?: string | null
+  codechef?: string | null
+  codeforces?: string | null
+  hackerrank?: string | null
+  hackerearth?: string | null
+  website?: string | null
 }
 
 export class UserRepository {

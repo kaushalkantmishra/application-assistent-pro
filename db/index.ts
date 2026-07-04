@@ -6,5 +6,6 @@ if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set in environment variables")
 }
 
-const sql = neon(process.env.DATABASE_URL)
+const connectionString = process.env.DATABASE_URL.replace(/^['"]|['"]$/g, "")
+const sql = neon(connectionString)
 export const db = drizzle(sql, { schema })

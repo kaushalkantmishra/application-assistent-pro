@@ -11,9 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { LogOut, User, Settings, ChevronLeft, ChevronRight, Mail, Calendar } from "lucide-react"
+import { LogOut, User, Settings, ChevronLeft, ChevronRight, Mail, Calendar, Sun, Moon, Menu, X } from "lucide-react"
 import LogoutModal from "./modals/logout-modal"
 import { AnalogClock } from "./analog-clock"
+import { useSidebar } from "@/contexts/sidebar-context"
 
 interface AppHeaderProps {
   isCollapsed: boolean
@@ -23,14 +24,39 @@ interface AppHeaderProps {
 export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
   const { data: session } = useSession()
   const role = useRole()
+  const { isMobileOpen, setIsMobileOpen } = useSidebar()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [theme, setTheme] = useState("dark")
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pref = localStorage.getItem("themePreference") || "dark"
+      setTheme(pref)
+      if (pref === "dark") {
+        document.documentElement.classList.add("dark")
+      } else {
+        document.documentElement.classList.remove("dark")
+      }
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark"
+    setTheme(newTheme)
+    localStorage.setItem("themePreference", newTheme)
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+  }
 
   // Debug session data
   console.log('Session data:', session)
@@ -46,6 +72,17 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+      {/* Mobile menu toggle */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="flex lg:hidden cursor-pointer"
+        title="Toggle Menu"
+      >
+        {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+
       {/* Sidebar toggle button */}
       <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="hidden lg:flex">
         {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -77,6 +114,16 @@ export function AppHeader({ isCollapsed, onToggleCollapse }: AppHeaderProps) {
       {/* User menu */}
       {session?.user && (
         <div className="flex items-center gap-4">
+          {/* Theme switcher */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-9 w-9 rounded-full border-border bg-transparent text-foreground cursor-pointer"
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4 text-amber-500" /> : <Moon className="h-4 w-4 text-slate-700" />}
+          </Button>
           {/* Role badge */}
           <Badge variant={role === "interviewer" ? "secondary" : "default"}>
             {role === "interviewer" ? "Interviewer" : "Job Seeker"}

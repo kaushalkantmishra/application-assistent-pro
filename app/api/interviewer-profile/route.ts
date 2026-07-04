@@ -17,6 +17,12 @@ const UpdateInterviewerProfileSchema = z.object({
   github: z.string().optional().nullable(),
   availability: z.any().optional().nullable(),
   interviewTypes: z.array(z.string()).optional().nullable(),
+  
+  portfolio: z.string().optional().nullable(),
+  pricingType: z.string().optional().nullable(),
+  hourlyCharges: z.number().optional().nullable(),
+  languages: z.array(z.string()).optional().nullable(),
+  interviewCategories: z.array(z.string()).optional().nullable(),
 })
 
 export async function GET() {
@@ -42,7 +48,38 @@ export async function GET() {
     }
 
     // Find interviewer profile
-    let profile = await db.select().from(interviewers).where(eq(interviewers.userId, userId)).then((r) => r[0])
+    let profile = await db
+      .select({
+        id: interviewers.id,
+        userId: interviewers.userId,
+        name: interviewers.name,
+        email: interviewers.email,
+        company: interviewers.company,
+        role: interviewers.role,
+        department: interviewers.department,
+        experience: interviewers.experience,
+        specializations: interviewers.specializations,
+        bio: interviewers.bio,
+        avatar: interviewers.avatar,
+        rating: interviewers.rating,
+        totalInterviews: interviewers.totalInterviews,
+        availability: interviewers.availability,
+        interviewTypes: interviewers.interviewTypes,
+        linkedIn: interviewers.linkedIn,
+        github: interviewers.github,
+        portfolio: interviewers.portfolio,
+        pricingType: interviewers.pricingType,
+        hourlyCharges: interviewers.hourlyCharges,
+        languages: interviewers.languages,
+        interviewCategories: interviewers.interviewCategories,
+        createdAt: interviewers.createdAt,
+        joinedDate: interviewers.joinedDate,
+        userImage: users.image,
+      })
+      .from(interviewers)
+      .leftJoin(users, eq(interviewers.userId, users.id))
+      .where(eq(interviewers.userId, userId))
+      .then((r) => r[0])
 
     if (!profile) {
       // Create empty profile or copy Sarah Jenkins' profile for the test user
@@ -55,8 +92,8 @@ export async function GET() {
         department: "Billing Infrastructure",
         experience: 9,
         specializations: ["React", "TypeScript", "Frontend Architecture", "API Design"],
-        bio: "Passionate about web performance, clean API designs, and building rich interactive dashboards.",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
+        bio: "Passionate about building scalable products and mentoring engineers.",
+        avatar: null,
         rating: 4.8,
         totalInterviews: 85,
         availability: {
@@ -64,14 +101,32 @@ export async function GET() {
           timeSlots: ["1:00 PM - 3:00 PM", "4:00 PM - 6:00 PM"],
         },
         interviewTypes: ["Frontend Technical", "React Deep-dive", "Behavioral / Leadership"],
-        linkedIn: "https://linkedin.com/in/sarah-jenkins-stripe",
-        github: "https://github.com/sjenkins-dev",
+        linkedIn: null,
+        github: null,
         isActive: true,
       }).returning()
-      profile = result[0]
+      
+      const newProfile = result[0]
+      // Fetch user image
+      const usr = await db.select().from(users).where(eq(users.id, userId)).then((r) => r[0])
+      profile = {
+        ...newProfile,
+        userImage: usr?.image || null,
+      } as any
     }
 
-    return NextResponse.json(profile)
+    // Dynamic avatar resolving: if avatar contains Sarah's photo, clear it to trigger fallback
+    let finalAvatar = profile.avatar
+    if (finalAvatar && finalAvatar.includes("photo-1494790108377-be9c29b29330")) {
+      finalAvatar = null
+    }
+
+    const responseProfile = {
+      ...profile,
+      avatar: finalAvatar || profile.userImage,
+    }
+
+    return NextResponse.json(responseProfile)
   } catch (error) {
     console.error("Fetch interviewer profile API error:", error)
     return NextResponse.json({ error: "Failed to fetch interviewer profile" }, { status: 500 })
@@ -108,18 +163,35 @@ export async function POST(request: NextRequest) {
     // Check if profile exists
     const existing = await db.select().from(interviewers).where(eq(interviewers.userId, userId)).then((r) => r[0])
 
+    const updateData = {
+      name: parsed.data.name,
+      company: parsed.data.company ?? null,
+      role: parsed.data.role ?? null,
+      department: parsed.data.department ?? null,
+      experience: parsed.data.experience ?? null,
+      specializations: parsed.data.specializations ?? null,
+      bio: parsed.data.bio ?? null,
+      linkedIn: parsed.data.linkedIn ?? null,
+      github: parsed.data.github ?? null,
+      availability: parsed.data.availability ?? null,
+      interviewTypes: parsed.data.interviewTypes ?? null,
+      portfolio: parsed.data.portfolio ?? null,
+      pricingType: parsed.data.pricingType || "free",
+      hourlyCharges: parsed.data.hourlyCharges || 0,
+      languages: parsed.data.languages ?? null,
+      interviewCategories: parsed.data.interviewCategories ?? null,
+      updatedAt: new Date(),
+    }
+
     let profile
     if (existing) {
-      const result = await db.update(interviewers).set({
-        ...parsed.data,
-        updatedAt: new Date(),
-      }).where(eq(interviewers.userId, userId)).returning()
+      const result = await db.update(interviewers).set(updateData).where(eq(interviewers.userId, userId)).returning()
       profile = result[0]
     } else {
       const result = await db.insert(interviewers).values({
         userId,
         email,
-        ...parsed.data,
+        ...updateData,
       }).returning()
       profile = result[0]
     }

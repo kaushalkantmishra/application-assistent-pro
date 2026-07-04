@@ -7,6 +7,7 @@ export interface ResumeData {
   templateId: string
   themeId: string
   isFavorite: boolean
+  isDefault: boolean
   resumeJson: Record<string, any>
 }
 
@@ -18,6 +19,7 @@ interface ResumeState {
   // Actions
   setResume: (resume: ResumeData) => void
   updateMetadata: (updates: Partial<Omit<ResumeData, "resumeJson">>) => void
+  updateResumeJson: (newResumeJson: Record<string, any>) => void
   
   // Content Actions
   updateField: (sectionId: string, fieldId: string, value: any) => void
@@ -74,6 +76,20 @@ export const useResumeStore = create<ResumeState>((set, get) => {
             ...updates,
           },
         }
+      })
+    },
+
+    updateResumeJson: (newResumeJson) => {
+      const { resume } = get()
+      if (!resume) return
+
+      saveToHistory(newResumeJson)
+
+      set({
+        resume: {
+          ...resume,
+          resumeJson: newResumeJson,
+        },
       })
     },
 

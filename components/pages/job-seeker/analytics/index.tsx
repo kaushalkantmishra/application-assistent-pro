@@ -31,7 +31,12 @@ export default function AnalyticsPage() {
     fetch("/api/applications")
       .then((res) => res.json())
       .then((data) => {
-        setApplications(data)
+        if (Array.isArray(data)) {
+          setApplications(data)
+        } else {
+          console.error("Failed to load applications array:", data)
+          setApplications([])
+        }
         setLoading(false)
       })
       .catch((err) => {

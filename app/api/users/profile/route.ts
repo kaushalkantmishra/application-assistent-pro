@@ -13,6 +13,28 @@ const UpdateProfileSchema = z.object({
   preferredCompanies: z.array(z.string()).optional().nullable(),
   preferredLocations: z.array(z.string()).optional().nullable(),
   resumeFileName: z.string().optional().nullable(),
+
+  about: z.string().optional().nullable(),
+  currentDesignation: z.string().optional().nullable(),
+  yearsOfExperience: z.number().optional().nullable(),
+  currentCompany: z.string().optional().nullable(),
+  currentSalary: z.string().optional().nullable(),
+  expectedSalary: z.string().optional().nullable(),
+  preferredIndustry: z.string().optional().nullable(),
+  preferredWorkMode: z.string().optional().nullable(),
+  languages: z.array(z.string()).optional().nullable(),
+
+  // Social Links
+  github: z.string().optional().nullable(),
+  linkedin: z.string().optional().nullable(),
+  portfolio: z.string().optional().nullable(),
+  leetcode: z.string().optional().nullable(),
+  geeksforgeeks: z.string().optional().nullable(),
+  codechef: z.string().optional().nullable(),
+  codeforces: z.string().optional().nullable(),
+  hackerrank: z.string().optional().nullable(),
+  hackerearth: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
 })
 
 export async function GET() {
@@ -94,6 +116,27 @@ export async function POST(request: NextRequest) {
       preferredCompanies: parsed.data.preferredCompanies,
       preferredLocations: parsed.data.preferredLocations,
       resumeFileName: parsed.data.resumeFileName,
+
+      about: parsed.data.about,
+      currentDesignation: parsed.data.currentDesignation,
+      yearsOfExperience: parsed.data.yearsOfExperience,
+      currentCompany: parsed.data.currentCompany,
+      currentSalary: parsed.data.currentSalary,
+      expectedSalary: parsed.data.expectedSalary,
+      preferredIndustry: parsed.data.preferredIndustry,
+      preferredWorkMode: parsed.data.preferredWorkMode,
+      languages: parsed.data.languages,
+
+      github: parsed.data.github,
+      linkedin: parsed.data.linkedin,
+      portfolio: parsed.data.portfolio,
+      leetcode: parsed.data.leetcode,
+      geeksforgeeks: parsed.data.geeksforgeeks,
+      codechef: parsed.data.codechef,
+      codeforces: parsed.data.codeforces,
+      hackerrank: parsed.data.hackerrank,
+      hackerearth: parsed.data.hackerearth,
+      website: parsed.data.website,
     })
 
     return NextResponse.json(updatedProfile)

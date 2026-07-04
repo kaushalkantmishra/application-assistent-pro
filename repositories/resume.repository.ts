@@ -86,12 +86,16 @@ export class ResumeRepository {
         resumeJson: data.resumeJson,
         status: data.status || "draft",
         isFavorite: false,
+        isDefault: false,
       })
       .returning()
     return result[0]
   }
 
-  static async update(id: string, data: Partial<Omit<ResumeInput, "resumeJson">> & { isFavorite?: boolean }) {
+  static async update(
+    id: string,
+    data: Partial<Omit<ResumeInput, "resumeJson">> & { isFavorite?: boolean; isDefault?: boolean }
+  ) {
     const result = await db
       .update(resumes)
       .set({

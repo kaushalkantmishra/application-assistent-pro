@@ -277,8 +277,30 @@ export function ModernTemplate({ resumeJson }: TemplateProps) {
             )}
             {personalInfo.portfolio && (
               <div className="flex items-center gap-1.5">
+                <Code className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                <a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">
+                  {personalInfo.portfolio.includes("leetcode.com") ? "LeetCode" : personalInfo.portfolio.replace("https://", "")}
+                </a>
+              </div>
+            )}
+            {personalInfo.website && (
+              <div className="flex items-center gap-1.5">
+                <LinkIcon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                <a href={personalInfo.website} target="_blank" rel="noreferrer" className="hover:underline">
+                  {personalInfo.website.includes("geeksforgeeks.org") ? "GeeksforGeeks" : personalInfo.website.replace("https://", "")}
+                </a>
+              </div>
+            )}
+            {personalInfo.customPortfolio && (
+              <div className="flex items-center gap-1.5">
                 <Globe className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                <a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">{personalInfo.portfolio.replace("https://", "")}</a>
+                <a href={personalInfo.customPortfolio} target="_blank" rel="noreferrer" className="hover:underline">Portfolio</a>
+              </div>
+            )}
+            {personalInfo.customWebsite && (
+              <div className="flex items-center gap-1.5">
+                <LinkIcon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                <a href={personalInfo.customWebsite} target="_blank" rel="noreferrer" className="hover:underline">Website</a>
               </div>
             )}
           </div>
@@ -436,7 +458,30 @@ export function ProfessionalTemplate({ resumeJson }: TemplateProps) {
             {personalInfo.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3 text-primary/70" />{personalInfo.email}</span>}
             {personalInfo.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3 text-primary/70" />{personalInfo.phone}</span>}
             {personalInfo.address && <span className="flex items-center gap-1"><MapPin className="h-3 w-3 text-primary/70" />{personalInfo.address}</span>}
-            {personalInfo.portfolio && <span className="flex items-center gap-1"><Globe className="h-3 w-3 text-primary/70" /><a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">{personalInfo.portfolio.replace("https://", "")}</a></span>}
+            {personalInfo.portfolio && (
+              <span className="flex items-center gap-1">
+                <Code className="h-3 w-3 text-primary/70" />
+                <a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">LeetCode</a>
+              </span>
+            )}
+            {personalInfo.website && (
+              <span className="flex items-center gap-1">
+                <LinkIcon className="h-3 w-3 text-primary/70" />
+                <a href={personalInfo.website} target="_blank" rel="noreferrer" className="hover:underline">GeeksforGeeks</a>
+              </span>
+            )}
+            {personalInfo.customPortfolio && (
+              <span className="flex items-center gap-1">
+                <Globe className="h-3 w-3 text-primary/70" />
+                <a href={personalInfo.customPortfolio} target="_blank" rel="noreferrer" className="hover:underline">Portfolio</a>
+              </span>
+            )}
+            {personalInfo.customWebsite && (
+              <span className="flex items-center gap-1">
+                <LinkIcon className="h-3 w-3 text-primary/70" />
+                <a href={personalInfo.customWebsite} target="_blank" rel="noreferrer" className="hover:underline">Website</a>
+              </span>
+            )}
           </div>
         </div>
 
@@ -589,8 +634,11 @@ export function DeveloperTemplate({ resumeJson }: TemplateProps) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4 text-slate-300" style={sizes.textXxs}>
               {personalInfo.email && <span>email: {personalInfo.email}</span>}
               {personalInfo.phone && <span>phone: {personalInfo.phone}</span>}
-              {personalInfo.portfolio && <span>web: {personalInfo.portfolio.replace("https://", "")}</span>}
               {personalInfo.github && <span>github: {personalInfo.github.replace("https://", "")}</span>}
+              {personalInfo.portfolio && <span>leetcode: {personalInfo.portfolio.replace("https://", "")}</span>}
+              {personalInfo.website && <span>geeksforgeeks: {personalInfo.website.replace("https://", "")}</span>}
+              {personalInfo.customPortfolio && <span>portfolio: {personalInfo.customPortfolio.replace("https://", "")}</span>}
+              {personalInfo.customWebsite && <span>web: {personalInfo.customWebsite.replace("https://", "")}</span>}
             </div>
           </div>
           {personalInfo.photo && (
@@ -715,7 +763,10 @@ export function MinimalTemplate({ resumeJson }: TemplateProps) {
             {personalInfo.email && <span>{personalInfo.email}</span>}
             {personalInfo.phone && <span>{personalInfo.phone}</span>}
             {personalInfo.address && <span>{personalInfo.address}</span>}
-            {personalInfo.portfolio && <a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">{personalInfo.portfolio.replace("https://", "")}</a>}
+            {personalInfo.portfolio && <a href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="hover:underline">LeetCode</a>}
+            {personalInfo.website && <a href={personalInfo.website} target="_blank" rel="noreferrer" className="hover:underline">GeeksforGeeks</a>}
+            {personalInfo.customPortfolio && <a href={personalInfo.customPortfolio} target="_blank" rel="noreferrer" className="hover:underline">Portfolio</a>}
+            {personalInfo.customWebsite && <a href={personalInfo.customWebsite} target="_blank" rel="noreferrer" className="hover:underline">Website</a>}
           </div>
         </div>
 
@@ -871,12 +922,21 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
       Math.round(sizes.base * 0.95 * 10) / 10
     }px`
   }
+  const contactSizeStyle = {
+    fontSize: `${
+      design.lineSpacing === "extratight" ? Math.round(sizes.base * 0.8 * 10) / 10 :
+      Math.round(sizes.base * 0.88 * 10) / 10
+    }px`
+  }
+
+  const underlineClass = design.underlineLinks !== false ? "underline underline-offset-[3px]" : "no-underline"
+  const hoverUnderlineClass = design.underlineLinks !== false ? "hover:underline hover:underline-offset-[3px]" : "hover:no-underline"
 
   // Generate contact items list
   const contactLinks = []
   if (personalInfo.phone && personalInfo.showPhone !== false) {
     contactLinks.push(
-      <span key="phone" className="inline-flex items-center gap-1">
+      <span key="phone" className={`inline-flex items-center gap-1 ${underlineClass}`}>
         <Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>{personalInfo.phone}</span>
       </span>
@@ -884,7 +944,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
   }
   if (personalInfo.email && personalInfo.showEmail !== false) {
     contactLinks.push(
-      <a key="email" href={`mailto:${personalInfo.email}`} className="inline-flex items-center gap-1 hover:underline underline">
+      <a key="email" href={`mailto:${personalInfo.email}`} className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
         <Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>{personalInfo.email}</span>
       </a>
@@ -892,7 +952,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
   }
   if (personalInfo.linkedIn && personalInfo.showLinkedIn !== false) {
     contactLinks.push(
-      <a key="linkedin" href={personalInfo.linkedIn} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline underline">
+      <a key="linkedin" href={personalInfo.linkedIn} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
         <Linkedin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>Linkedin</span>
       </a>
@@ -900,7 +960,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
   }
   if (personalInfo.github && personalInfo.showGitHub !== false) {
     contactLinks.push(
-      <a key="github" href={personalInfo.github} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline underline">
+      <a key="github" href={personalInfo.github} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
         <Github className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>Github</span>
       </a>
@@ -908,7 +968,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
   }
   if (personalInfo.portfolio && personalInfo.showPortfolio !== false) {
     contactLinks.push(
-      <a key="portfolio" href={personalInfo.portfolio} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline underline">
+      <a key="portfolio" href={personalInfo.portfolio} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
         <Code className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>LeetCode</span>
       </a>
@@ -916,9 +976,25 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
   }
   if (personalInfo.website && personalInfo.showWebsite !== false) {
     contactLinks.push(
-      <a key="website" href={personalInfo.website} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:underline underline">
+      <a key="website" href={personalInfo.website} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
         <LinkIcon className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
         <span>GeeksforGeeks</span>
+      </a>
+    )
+  }
+  if (personalInfo.customPortfolio && personalInfo.showCustomPortfolio !== false) {
+    contactLinks.push(
+      <a key="customPortfolio" href={personalInfo.customPortfolio} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
+        <Globe className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
+        <span>Portfolio</span>
+      </a>
+    )
+  }
+  if (personalInfo.customWebsite && personalInfo.showCustomWebsite !== false) {
+    contactLinks.push(
+      <a key="customWebsite" href={personalInfo.customWebsite} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-1 ${hoverUnderlineClass} ${underlineClass}`}>
+        <LinkIcon className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
+        <span>Website</span>
       </a>
     )
   }
@@ -947,7 +1023,7 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
             <p className="text-slate-700 italic mt-0.5" style={subtitleSizeStyle}>{personalInfo.headline}</p>
           )}
           {/* Contact Links Row */}
-          <div className={`flex flex-wrap ${justifyClass} items-center gap-x-2.5 gap-y-0.5 ${design.lineSpacing === "extratight" ? "mt-0.5" : "mt-1.5"} font-medium text-black`} style={subtitleSizeStyle}>
+          <div className={`flex flex-wrap ${justifyClass} items-center gap-x-2 gap-y-0.5 ${design.lineSpacing === "extratight" ? "mt-0.5" : "mt-1.5"} font-medium text-black`} style={contactSizeStyle}>
             {contactLinks.map((link, idx) => (
               <React.Fragment key={idx}>
                 {link}
@@ -965,7 +1041,15 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                 {summary.title || "Professional Summary"}
               </h3>
               {showDivider && (
-                <div className="w-full mt-[1px]" style={{ backgroundColor: primaryColor, height: thickness }} />
+                <div 
+                  className="w-full mt-[1px]" 
+                  style={{ 
+                    borderBottom: `${thickness} solid ${primaryColor}`, 
+                    height: "1px",
+                    WebkitPrintColorAdjust: "exact",
+                    printColorAdjust: "exact"
+                  }} 
+                />
               )}
             </div>
             <p className="text-slate-955 leading-normal text-justify" style={sizes.textNormal}>
@@ -1001,7 +1085,15 @@ export function ClassicTemplate({ resumeJson }: TemplateProps) {
                   {section.title || sectionId.replace(/([A-Z])/g, " $1")}
                 </h3>
                 {showDivider && (
-                  <div className="w-full mt-[1px]" style={{ backgroundColor: primaryColor, height: thickness }} />
+                  <div 
+                    className="w-full mt-[1px]" 
+                    style={{ 
+                      borderBottom: `${thickness} solid ${primaryColor}`, 
+                      height: "1px",
+                      WebkitPrintColorAdjust: "exact",
+                      printColorAdjust: "exact"
+                    }} 
+                  />
                 )}
               </div>
 

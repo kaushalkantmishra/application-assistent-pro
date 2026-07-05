@@ -741,12 +741,12 @@ export default function ResumeDashboardPage() {
                             📁 {res.folder.name}
                           </Badge>
                         )}
-                        {res.tags.slice(0, 2).map((t) => (
+                        {(res.tags || []).slice(0, 2).map((t) => (
                           <Badge key={t.id} variant="secondary" className="text-[9px] font-bold uppercase">
                             {t.name}
                           </Badge>
                         ))}
-                        {res.tags.length > 2 && (
+                        {res.tags && res.tags.length > 2 && (
                           <Badge variant="secondary" className="text-[9px]">
                             +{res.tags.length - 2} more
                           </Badge>

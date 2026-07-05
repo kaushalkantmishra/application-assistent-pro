@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
+import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from "react-resizable-panels"
 import { useResumeStore } from "@/stores/resume-store"
 import { useEditorStore } from "@/stores/editor-store"
 import { useAutosaveStore } from "@/stores/autosave-store"
@@ -12,7 +12,7 @@ import { ResumeTemplateSelector } from "./resume-templates"
 import AiAssistantDashboard from "./ai-assistant-dashboard"
 import { ContentLibraryDialog } from "./content-library-dialog"
 import { AppLoader } from "@/components/app-loader"
-import { BookOpen } from "lucide-react"
+import { BookOpen, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -101,6 +101,21 @@ export default function ResumeEditorPage({ id }: { id: string }) {
 
   // Drag and Drop Section indices
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+
+  // Resizable left panel collapsing state and toggle ref
+  const leftPanelRef = useRef<ImperativePanelHandle>(null)
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false)
+
+  const toggleLeftPanel = () => {
+    const panel = leftPanelRef.current
+    if (panel) {
+      if (panel.isCollapsed()) {
+        panel.expand()
+      } else {
+        panel.collapse()
+      }
+    }
+  }
 
   // Content library states
   const [libraryOpen, setLibraryOpen] = useState(false)
@@ -639,6 +654,13 @@ export default function ResumeEditorPage({ id }: { id: string }) {
             border: none !important;
             background: white !important;
           }
+          #resume-print-area > div {
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+          }
 
           @page {
             size: A4 portrait;
@@ -654,6 +676,17 @@ export default function ResumeEditorPage({ id }: { id: string }) {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
+          {leftPanelCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="cursor-pointer h-8 w-8 hover:bg-slate-100"
+              onClick={toggleLeftPanel}
+              title="Expand Edit Sections"
+            >
+              <PanelLeftOpen className="h-4 w-4 text-slate-600" />
+            </Button>
+          )}
           <Input
             value={resume.title}
             onChange={(e) => handleMetaChange("title", e.target.value)}
@@ -704,9 +737,29 @@ export default function ResumeEditorPage({ id }: { id: string }) {
         <PanelGroup direction="horizontal" onLayout={setPanelSizes}>
           
           {/* LEFT PANEL: Sections management */}
-          <Panel defaultSize={panelSizes[0]} minSize={15} maxSize={30} className="bg-card border-r flex flex-col overflow-hidden h-full no-print">
+          <Panel 
+            ref={leftPanelRef}
+            defaultSize={panelSizes[0]} 
+            minSize={15} 
+            maxSize={30} 
+            collapsible={true}
+            onCollapse={() => setLeftPanelCollapsed(true)}
+            onExpand={() => setLeftPanelCollapsed(false)}
+            className="bg-card border-r flex flex-col overflow-hidden h-full no-print"
+          >
             <div className="p-3 border-b flex justify-between items-center bg-slate-50/50">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Edit Sections</span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 cursor-pointer hover:bg-slate-100"
+                  onClick={toggleLeftPanel}
+                  title="Collapse Sidebar"
+                >
+                  <PanelLeftClose className="h-4 w-4 text-slate-600" />
+                </Button>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Edit Sections</span>
+              </div>
               <Button
                 size="icon"
                 variant="ghost"
@@ -1177,6 +1230,17 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                           className="h-4 w-4 rounded border-slate-300 text-primary cursor-pointer"
                         />
                       </div>
+
+                      <div className="flex items-center justify-between p-2.5 rounded-lg border bg-slate-50/50">
+                        <Label className="text-xs font-medium text-slate-700 cursor-pointer" htmlFor="underlineLinks">Underline Contacts</Label>
+                        <input
+                          type="checkbox"
+                          id="underlineLinks"
+                          checked={resumeJson.design?.underlineLinks !== false}
+                          onChange={(e) => updateField("design", "underlineLinks", e.target.checked)}
+                          className="h-4 w-4 rounded border-slate-300 text-primary cursor-pointer"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1469,6 +1533,8 @@ export default function ResumeEditorPage({ id }: { id: string }) {
                               { id: "showGitHub", label: "Show GitHub Profile" },
                               { id: "showPortfolio", label: "Show LeetCode Link" },
                               { id: "showWebsite", label: "Show GeeksforGeeks Link" },
+                              { id: "showCustomPortfolio", label: "Show Portfolio Link" },
+                              { id: "showCustomWebsite", label: "Show Other Website Link" },
                             ].map((opt) => {
                               const checked = resumeJson.personalInfo?.[opt.id] !== false
                               return (

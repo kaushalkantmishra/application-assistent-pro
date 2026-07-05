@@ -160,6 +160,13 @@
     border: none !important;
     background: white !important;
   }
+  #resume-print-area > div {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
 
   /* Set print page properties */
   @page {

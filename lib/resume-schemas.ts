@@ -35,8 +35,10 @@ export const RESUME_SECTIONS_SCHEMAS: SectionSchema[] = [
       { id: "address", label: "Location / Address", placeholder: "San Francisco, CA (Hybrid)", type: "text", defaultValue: "" },
       { id: "linkedIn", label: "LinkedIn URL", placeholder: "https://linkedin.com/in/username", type: "url", defaultValue: "" },
       { id: "github", label: "GitHub URL", placeholder: "https://github.com/username", type: "url", defaultValue: "" },
-      { id: "portfolio", label: "Portfolio URL", placeholder: "https://myportfolio.dev", type: "url", defaultValue: "" },
-      { id: "website", label: "Other Website URL", placeholder: "https://example.com", type: "url", defaultValue: "" },
+      { id: "portfolio", label: "LeetCode URL", placeholder: "https://leetcode.com/username", type: "url", defaultValue: "" },
+      { id: "website", label: "GeeksforGeeks URL", placeholder: "https://auth.geeksforgeeks.org/user/username", type: "url", defaultValue: "" },
+      { id: "customPortfolio", label: "Portfolio URL", placeholder: "https://myportfolio.dev", type: "url", defaultValue: "" },
+      { id: "customWebsite", label: "Other Website URL", placeholder: "https://example.com", type: "url", defaultValue: "" },
     ],
   },
   {
